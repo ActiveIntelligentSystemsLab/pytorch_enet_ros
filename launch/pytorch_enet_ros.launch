@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+  <node pkg="pytorch_enet_ros" type="pytorch_enet_ros_node" name="pytorch_enet_ros_node">
+    <param name="model_file" value="$(find pytorch_enet_ros)/models/ENet_h264_w480.pt" />
+  </node>
+</launch>
