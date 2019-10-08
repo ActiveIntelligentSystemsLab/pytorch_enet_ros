@@ -10,14 +10,15 @@
 #include <ros/ros.h>
 
 #include <opencv2/opencv.hpp>
-
 #include<image_transport/image_transport.h>
 #include<cv_bridge/cv_bridge.h>
+#include<semantic_segmentation_srvs/GetLabelImage.h>
 
 #include"pytorch_cpp_wrapper/pytorch_cpp_wrapper.h"
 
 #include <iostream>
 #include <memory>
+#include <tuple>
 
 class PyTorchENetROS {
 private:
@@ -30,12 +31,18 @@ private:
 
   PyTorchCppWrapper pt_wrapper_;
 
+  cv::Mat colormap_;
+
 public:
-  PyTorchENetROS();
+  PyTorchENetROS(ros::NodeHandle & nh); 
 
   void image_callback(const sensor_msgs::ImageConstPtr& msg); 
-  void inference(cv::Mat & input_image);
-
+  std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr> inference(cv::Mat & input_image);
+  bool image_inference_srv_callback(semantic_segmentation_srvs::GetLabelImage::Request  & req,
+                                    semantic_segmentation_srvs::GetLabelImage::Response & res);
+  cv_bridge::CvImagePtr msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg);
+  cv_bridge::CvImagePtr msg_to_cv_bridge(sensor_msgs::Image msg);
+  void label_to_color(cv::Mat& label, cv::Mat& color_label);
 };
 
 #endif

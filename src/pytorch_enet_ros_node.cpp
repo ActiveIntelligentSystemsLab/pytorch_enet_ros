@@ -11,10 +11,20 @@ int main(int argc, char* argv[]) {
   // Initialize the node
   ros::init(argc, argv, "pytorch_enet_ros");
 
+  ros::NodeHandle nh("~");
+  //ros::NodeHandle nh;
+
   // Initialize the class
-  PyTorchENetROS enet_ros();
+  PyTorchENetROS enet_ros(nh);
 
   ROS_INFO("[PyTorchENetROS] The node has been initialized");
 
   ros::spin();
+  
+//  ros::Rate rate(30.0);
+//  while(ros::ok()) {
+//    ros::spinOnce();
+//
+//    rate.sleep();
+//  }
 }

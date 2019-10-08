@@ -18,7 +18,7 @@ public:
   PyTorchCppWrapper(const std::string filename);
   PyTorchCppWrapper(const char* filename);
 
-  void import_module(const std::string filename);
+  bool import_module(const std::string filename);
   void img2tensor(cv::Mat & img, at::Tensor & tensor, const bool use_gpu = true);
   void tensor2img(at::Tensor tensor, cv::Mat & img);
   at::Tensor get_output(at::Tensor input_tensor);

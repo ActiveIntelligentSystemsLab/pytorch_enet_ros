@@ -14,6 +14,9 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  image_transport
+  cv_bridge
+  semantic_segmentation_srvs
 )
 
 find_package(Torch REQUIRED)

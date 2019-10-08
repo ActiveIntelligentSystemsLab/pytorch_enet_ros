@@ -23,16 +23,18 @@ PyTorchCppWrapper::PyTorchCppWrapper(const char* filename) {
   import_module(std::string(filename));
 }
 
-void
+bool
 PyTorchCppWrapper::import_module(const std::string filename)
 {
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
     module_ = torch::jit::load(filename);
     std::cout << "Import succeeded" << std::endl;
+    return true;
   }
   catch (const c10::Error& e) {
     std::cerr << "error loading the model\n";
+    return false;
   }
 }
 
