@@ -16,6 +16,7 @@ PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh)
   sub_image_ = it_.subscribe("image", 1, &PyTorchENetROS::image_callback, this);
   pub_label_image_ = it_.advertise("label", 1);
   pub_color_image_ = it_.advertise("color_label", 1);
+  get_label_image_server_ = nh_.advertiseService("get_label_image", &PyTorchENetROS::image_inference_srv_callback, this);
 
   // Import the model
   std::string filename;
@@ -62,6 +63,7 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
 {
   ROS_INFO("[PyTorchENetROS image_inference_srv_callback] Start");
 
+
   // Convert the image message to a cv_bridge object
   cv_bridge::CvImagePtr cv_ptr = msg_to_cv_bridge(req.img);
 
@@ -82,6 +84,15 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
 std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr>
 PyTorchENetROS::inference(cv::Mat & input_img)
 {
+
+  // The size of the original image, to which the result of inference is resized back.
+  int height_orig = input_img.size().height;
+  int width_orig  = input_img.size().width;
+
+  cv::Size s(480, 264);
+  // Resize the input image
+  cv::resize(input_img, input_img, s);
+
 //  ROS_INFO("[PyTorchENetROS inference] Start");
   at::Tensor input_tensor;
   pt_wrapper_.img2tensor(input_img, input_tensor);
@@ -102,6 +113,11 @@ PyTorchENetROS::inference(cv::Mat & input_img)
 //  ROS_INFO("[PyTorchENetROS inference] tensor2img");
   pt_wrapper_.tensor2img(output_args[0], label);
 
+  // Set the size
+  cv::Size s_orig(width_orig, height_orig);
+  // Resize the input image back to the original size
+  cv::resize(label, label, s_orig, cv::INTER_NEAREST);
+
   cv::Mat color_label;
 //  cv::applyColorMap(mat, color_label, cv::COLORMAP_JET);
   label_to_color(label, color_label);
@@ -109,7 +125,7 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   // Generate an image message
 //  ROS_INFO("[PyTorchENetROS inference] cv_bridge to image msg");
   sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
-  sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", color_label).toImageMsg();
+  sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
   
 
 //  sensor_msgs::ImagePtr color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
@@ -147,12 +163,6 @@ PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
     return nullptr;
   }
 
-  // Set the size
-  cv::Size s(480, 264);
-
-  // Resize the input image
-  cv::resize(cv_ptr->image, cv_ptr->image, s);
-
   return cv_ptr;
 }
 
@@ -174,12 +184,6 @@ PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::Image msg)
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return nullptr;
   }
-
-  // Set the size
-  cv::Size s(480, 264);
-
-  // Resize the input image
-  cv::resize(cv_ptr->image, cv_ptr->image, s);
 
   return cv_ptr;
 }

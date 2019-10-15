@@ -23,6 +23,9 @@
 class PyTorchENetROS {
 private:
   ros::NodeHandle nh_;
+
+  ros::ServiceServer get_label_image_server_;
+
   image_transport::ImageTransport it_;
 
   image_transport::Subscriber sub_image_;

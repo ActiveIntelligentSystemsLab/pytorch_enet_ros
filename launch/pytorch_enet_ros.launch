@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 
 <launch>
-  <node pkg="pytorch_enet_ros" type="pytorch_enet_ros_node" name="pytorch_enet_ros_node" output="log">
+  <node pkg="pytorch_enet_ros" type="pytorch_enet_ros_node" name="pytorch_enet_ros_node" output="screen">
     <remap from="~image" to="/kinect2/qhd/image_color_rect" />
-    <param name="model_file" value="$(find pytorch_enet_ros)/models/ENet_h264_w480.pt" />
+    <param name="model_file" value="$(find pytorch_enet_ros)/models/ENet_greenhouse.pt" />
     <param name="colormap" value="$(find pytorch_enet_ros)/images/greenhouse4.png" />
     <param name="model_name" value="camvid" />
   </node>
