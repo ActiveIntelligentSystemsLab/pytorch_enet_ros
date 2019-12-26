@@ -50,6 +50,10 @@ PyTorchENetROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   sensor_msgs::ImagePtr color_label_msg;
   std::tie(label_msg, color_label_msg) = inference(cv_ptr->image);
 
+  // Set header
+  label_msg->header = msg->header;
+  color_label_msg->header = msg->header;
+
   pub_label_image_.publish(label_msg);
   pub_color_image_.publish(color_label_msg);
 }
