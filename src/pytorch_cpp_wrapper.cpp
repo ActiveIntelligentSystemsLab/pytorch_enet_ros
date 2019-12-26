@@ -29,6 +29,10 @@ PyTorchCppWrapper::import_module(const std::string filename)
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
     module_ = torch::jit::load(filename);
+    // Set evaluation mode
+    module_->eval();
+    std::cout << module_->is_training() << std::endl;
+
     std::cout << "Import succeeded" << std::endl;
     return true;
   }
