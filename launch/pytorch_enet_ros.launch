@@ -8,7 +8,7 @@
     <param name="colormap" value="$(find pytorch_enet_ros)/images/camvid12.png" />
     -->
     <remap from="~image" to="/camera/rgb/image_rect_color" />
-    <param name="model_file" value="$(find pytorch_enet_ros)/models/ENet_scenes_train_c2-501_2_200.pt" />
+    <param name="model_file" value="$(find pytorch_enet_ros)/models/ERFNet_scenes_train_c2-501_2_200.pt" />
     <param name="colormap" value="$(find pytorch_enet_ros)/images/greenhouse4.png" />
     <param name="model_name" value="greenhouse" />
   </node>
