@@ -93,9 +93,9 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   int height_orig = input_img.size().height;
   int width_orig  = input_img.size().width;
 
-//  cv::Size s(320, 240);
+  cv::Size s(480, 264);
   // Resize the input image
-//  cv::resize(input_img, input_img, s);
+  cv::resize(input_img, input_img, s);
 
 //  ROS_INFO("[PyTorchENetROS inference] Start");
   at::Tensor input_tensor;
@@ -120,7 +120,7 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   // Set the size
   cv::Size s_orig(width_orig, height_orig);
   // Resize the input image back to the original size
-//  cv::resize(label, label, s_orig, cv::INTER_NEAREST);
+  cv::resize(label, label, s_orig, cv::INTER_NEAREST);
 
   cv::Mat color_label;
 //  cv::applyColorMap(mat, color_label, cv::COLORMAP_JET);
