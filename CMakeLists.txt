@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(pytorch_enet_ros)
 
-## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 # Locate the cmake file of torchlib
 set(Torch_DIR "/opt/pytorch/pytorch/torch/share/cmake/Torch/")
@@ -21,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 find_package(OpenCV REQUIRED)
 
 catkin_package(
@@ -54,6 +54,7 @@ target_link_libraries(${PROJECT_NAME}
   ${Open_CV_LIBS}
   opencv_core opencv_highgui opencv_imgcodecs
 )
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -64,4 +65,5 @@ add_executable(${PROJECT_NAME}_node src/pytorch_enet_ros_node.cpp)
 target_link_libraries(${PROJECT_NAME}_node
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}
+  ${TORCH_LIBRARIES}
 )

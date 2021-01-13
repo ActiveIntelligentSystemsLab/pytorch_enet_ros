@@ -6,21 +6,36 @@
 
 
 #include "pytorch_cpp_wrapper/pytorch_cpp_wrapper.h"
+#include <torch/script.h> // One-stop header.
+#include <torch/data/transforms/tensor.h> // One-stop header.
+#include <c10/util/ArrayRef.h>
+#include <opencv2/opencv.hpp>
+#include "opencv2/highgui/highgui.hpp"
+#include <typeinfo>
 
 //namespace mpl {
 
 PyTorchCppWrapper::PyTorchCppWrapper() {
-
+  std::vector<float> mean_vec{0.485, 0.456, 0.406};
+  std::vector<float> std_vec{0.229, 0.224, 0.225};
+  
 }
 
 PyTorchCppWrapper::PyTorchCppWrapper(const std::string filename) {
   // Import
   import_module(filename);
+  std::vector<float> mean_vec{0.485, 0.456, 0.406};
+  std::vector<float> std_vec{0.229, 0.224, 0.225};
+  
 }
 
 PyTorchCppWrapper::PyTorchCppWrapper(const char* filename) {
   // Import
   import_module(std::string(filename));
+
+  std::vector<float> mean_vec{0.485, 0.456, 0.406};
+  std::vector<float> std_vec{0.229, 0.224, 0.225};
+  
 }
 
 bool
@@ -30,8 +45,8 @@ PyTorchCppWrapper::import_module(const std::string filename)
     // Deserialize the ScriptModule from a file using torch::jit::load().
     module_ = torch::jit::load(filename);
     // Set evaluation mode
-    module_->eval();
-    std::cout << module_->is_training() << std::endl;
+    module_.eval();
+    std::cout << module_.is_training() << std::endl;
 
     std::cout << "Import succeeded" << std::endl;
     return true;
@@ -76,9 +91,14 @@ at::Tensor
 PyTorchCppWrapper::get_output(at::Tensor input_tensor)
 {
   // Execute the model and turn its output into a tensor.
-  at::Tensor output = module_->forward({input_tensor}).toTensor();
+  auto outputs_tmp = module_.forward({input_tensor}); //.toTuple();
 
-  return output;
+  auto outputs = outputs_tmp.toTuple();
+
+  at::Tensor output1 = outputs->elements()[0].toTensor();
+  at::Tensor output2 = outputs->elements()[1].toTensor();
+
+  return output1 + 0.5 * output2;
 }
 
 at::Tensor 
