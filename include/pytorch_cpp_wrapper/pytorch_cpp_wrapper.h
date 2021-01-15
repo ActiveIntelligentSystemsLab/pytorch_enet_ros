@@ -25,7 +25,8 @@ public:
   bool import_module(const std::string filename);
   void img2tensor(cv::Mat & img, at::Tensor & tensor, const bool use_gpu = true);
   void tensor2img(at::Tensor tensor, cv::Mat & img);
-  at::Tensor get_output(at::Tensor input_tensor);
+//  at::Tensor get_output(at::Tensor input_tensor);
+  std::tuple<at::Tensor, at::Tensor> get_output(at::Tensor input_tensor);
   at::Tensor get_argmax(at::Tensor input_tensor);
 };
 //}

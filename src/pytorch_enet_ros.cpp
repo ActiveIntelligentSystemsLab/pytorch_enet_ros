@@ -18,7 +18,7 @@ PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh)
   std::string filename;
   nh_.param<std::string>("model_file", filename, "");
   if(!pt_wrapper_.import_module(filename)) {
-    ROS_ERROR("Failed to import the  model file [%s]", filename.c_str());
+    ROS_ERROR("Failed to import the model file [%s]", filename.c_str());
     ros::shutdown();
   }
 
@@ -44,6 +44,7 @@ PyTorchENetROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   // Run inference
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
+  sensor_msgs::ImagePtr prob_msg;
   std::tie(label_msg, color_label_msg) = inference(cv_ptr->image);
 
   // Set header
@@ -69,6 +70,7 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
   // Run inference
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
+  sensor_msgs::ImagePtr prob_msg;
   std::tie(label_msg, color_label_msg) = inference(cv_ptr->image);
 
   res.label_img = *label_msg;
@@ -103,27 +105,35 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   for(int i = 0; i < mean_vec.size(); i++) {
     input_tensor[0][i] = (input_tensor[0][i] - mean_vec[i]) / std_vec[i];
   }
-  std::cout << input_tensor.sizes() << std::endl;
+//  std::cout << input_tensor.sizes() << std::endl;
 
   // Execute the model and turn its output into a tensor.
-  at::Tensor output = pt_wrapper_.get_output(input_tensor);
+  at::Tensor segmentation;
+  at::Tensor prob;
+  std::tie(segmentation, prob) = pt_wrapper_.get_output(input_tensor);
+//  at::Tensor output = pt_wrapper_.get_output(input_tensor);
   // Calculate argmax to get a label on each pixel
-  at::Tensor output_args = pt_wrapper_.get_argmax(output);
+//  at::Tensor output_args = pt_wrapper_.get_argmax(output);
+
+  at::Tensor output_args = pt_wrapper_.get_argmax(segmentation);
 
   // Convert to OpenCV
   cv::Mat label;
+  cv::Mat prob_cv;
   pt_wrapper_.tensor2img(output_args[0], label);
+  pt_wrapper_.tensor2img((prob[0][0]*255).to(torch::kByte), prob_cv);
 
   // Set the size
   cv::Size s_orig(width_orig, height_orig);
   // Resize the input image back to the original size
   cv::resize(label, label, s_orig, cv::INTER_NEAREST);
-
+  cv::resize(prob_cv, prob_cv, s_orig, cv::INTER_LINEAR);
   cv::Mat color_label;
   label_to_color(label, color_label);
 
   // Generate an image message
-  sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
+//  sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
+  sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", prob_cv).toImageMsg();
   sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
   
   return std::forward_as_tuple(label_msg, color_label_msg);
