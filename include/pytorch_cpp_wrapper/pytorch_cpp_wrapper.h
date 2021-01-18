@@ -15,6 +15,8 @@ class PyTorchCppWrapper {
 private :
 //  std::shared_ptr<torch::jit::script::Module> module_;
   torch::jit::script::Module module_;
+  // c = P(s|y=1) in PU learning, calculated during training
+  float c_;
 //  torch::data::transforms::Normalize<at::Tensor> normalizer_;
 
 public:

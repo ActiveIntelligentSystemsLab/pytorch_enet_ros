@@ -12,6 +12,7 @@ PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh)
   sub_image_ = it_.subscribe("image", 1, &PyTorchENetROS::image_callback, this);
   pub_label_image_ = it_.advertise("label", 1);
   pub_color_image_ = it_.advertise("color_label", 1);
+  pub_prob_image_ = it_.advertise("prob", 1);
   get_label_image_server_ = nh_.advertiseService("get_label_image", &PyTorchENetROS::image_inference_srv_callback, this);
 
   // Import the model
@@ -45,22 +46,24 @@ PyTorchENetROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
   sensor_msgs::ImagePtr prob_msg;
-  std::tie(label_msg, color_label_msg) = inference(cv_ptr->image);
+  std::tie(label_msg, color_label_msg, prob_msg) = inference(cv_ptr->image);
 
   // Set header
   label_msg->header = msg->header;
   color_label_msg->header = msg->header;
+  prob_msg->header = msg->header;
 
   pub_label_image_.publish(label_msg);
   pub_color_image_.publish(color_label_msg);
+  pub_prob_image_.publish(prob_msg);
 }
 
 /*
  * image_inference_srv_callback : Callback for the service
  */
 bool
-PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabelImage::Request  & req,
-                                             semantic_segmentation_srvs::GetLabelImage::Response & res)
+PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabelAndProbability::Request  & req,
+                                             semantic_segmentation_srvs::GetLabelAndProbability::Response & res)
 {
   ROS_INFO("[PyTorchENetROS image_inference_srv_callback] Start");
 
@@ -71,10 +74,11 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
   sensor_msgs::ImagePtr prob_msg;
-  std::tie(label_msg, color_label_msg) = inference(cv_ptr->image);
+  std::tie(label_msg, color_label_msg, prob_msg) = inference(cv_ptr->image);
 
   res.label_img = *label_msg;
   res.colorlabel_img = *color_label_msg;
+  res.prob_img = *prob_msg;
 
   return true;
 }
@@ -82,7 +86,7 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
 /*
  * inference : Forward the given input image through the network and return the inference result
  */
-std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr>
+std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr>
 PyTorchENetROS::inference(cv::Mat & input_img)
 {
 
@@ -128,15 +132,16 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   // Resize the input image back to the original size
   cv::resize(label, label, s_orig, cv::INTER_NEAREST);
   cv::resize(prob_cv, prob_cv, s_orig, cv::INTER_LINEAR);
+  // Generate color label image
   cv::Mat color_label;
   label_to_color(label, color_label);
 
   // Generate an image message
-//  sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
-  sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", prob_cv).toImageMsg();
+  sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
   sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
+  sensor_msgs::ImagePtr prob_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", prob_cv).toImageMsg();
   
-  return std::forward_as_tuple(label_msg, color_label_msg);
+  return std::forward_as_tuple(label_msg, color_label_msg, prob_msg);
 }
 
 /*
