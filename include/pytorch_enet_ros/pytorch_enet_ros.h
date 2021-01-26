@@ -36,6 +36,8 @@ private:
 
   cv::Mat colormap_;
 
+  float alpha_;
+
 public:
   PyTorchENetROS(ros::NodeHandle & nh); 
 

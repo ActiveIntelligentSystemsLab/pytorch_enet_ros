@@ -30,8 +30,8 @@ PyTorchCppWrapper::import_module(const std::string filename)
     // Deserialize the ScriptModule from a file using torch::jit::load().
     module_ = torch::jit::load(filename);
     // Set evaluation mode
-    module_->eval();
-    std::cout << module_->is_training() << std::endl;
+    module_.eval();
+    std::cout << module_.is_training() << std::endl;
 
     std::cout << "Import succeeded" << std::endl;
     return true;
@@ -76,7 +76,7 @@ at::Tensor
 PyTorchCppWrapper::get_output(at::Tensor input_tensor)
 {
   // Execute the model and turn its output into a tensor.
-  at::Tensor output = module_->forward({input_tensor}).toTensor();
+  at::Tensor output = module_.forward({input_tensor}).toTensor();
 
   return output;
 }

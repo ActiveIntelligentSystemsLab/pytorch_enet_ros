@@ -11,7 +11,8 @@
 //namespace mpl {
 class PyTorchCppWrapper {
 private :
-  std::shared_ptr<torch::jit::script::Module> module_;
+//  std::shared_ptr<torch::jit::script::Module> module_;
+  torch::jit::script::Module module_;
 
 public:
   PyTorchCppWrapper();

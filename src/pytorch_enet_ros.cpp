@@ -35,6 +35,8 @@ PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh)
     ros::shutdown();
   }
   
+  // Alpha
+  nh_.param<float>("alpha", alpha_, 0.5);
 }
 
 void
@@ -126,10 +128,15 @@ PyTorchENetROS::inference(cv::Mat & input_img)
 //  cv::applyColorMap(mat, color_label, cv::COLORMAP_JET);
   label_to_color(label, color_label);
 
+  // Alpha blend
+  cv::Mat alpha_blended_img;
+  cv::addWeighted(input_img, 1.0-alpha_, color_label, alpha_, 0.0, alpha_blended_img);
+
   // Generate an image message
 //  ROS_INFO("[PyTorchENetROS inference] cv_bridge to image msg");
   sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
-  sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
+//  sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
+  sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", alpha_blended_img).toImageMsg();
   
 
 //  sensor_msgs::ImagePtr color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
