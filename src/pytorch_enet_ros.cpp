@@ -9,10 +9,6 @@
 PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh) 
   : it_(nh), nh_(nh)
 {
-//  nh_ = ros::NodeHandle(nh);
-//  it_ = image_transport::ImageTransport(nh_);
-//  ROS_INFO("[PyTorchENetROS] Constructor");
-
   sub_image_ = it_.subscribe("image", 1, &PyTorchENetROS::image_callback, this);
   pub_label_image_ = it_.advertise("label", 1);
   pub_color_image_ = it_.advertise("color_label", 1);
@@ -69,7 +65,6 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
 {
   ROS_INFO("[PyTorchENetROS image_inference_srv_callback] Start");
 
-
   // Convert the image message to a cv_bridge object
   cv_bridge::CvImagePtr cv_ptr = msg_to_cv_bridge(req.img);
 
@@ -95,37 +90,38 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   int height_orig = input_img.size().height;
   int width_orig  = input_img.size().width;
 
-//  cv::Size s(320, 240);
+  cv::Size s(480, 256);
   // Resize the input image
-//  cv::resize(input_img, input_img, s);
+  cv::resize(input_img, input_img, s);
 
-//  ROS_INFO("[PyTorchENetROS inference] Start");
   at::Tensor input_tensor;
   pt_wrapper_.img2tensor(input_img, input_tensor);
 
+  // Normalize from [0, 255] -> [0, 1]
+  input_tensor /= 255.0;
+  // z-normalization
+  std::vector<float> mean_vec{0.485, 0.456, 0.406};
+  std::vector<float> std_vec{0.229, 0.224, 0.225};
+  for(int i = 0; i < mean_vec.size(); i++) {
+    input_tensor[0][i] = (input_tensor[0][i] - mean_vec[i]) / std_vec[i];
+  }
   std::cout << input_tensor.sizes() << std::endl;
+
   // Execute the model and turn its output into a tensor.
-//  at::Tensor output = module->forward({input_tensor}).toTensor();
-//  ROS_INFO("[PyTorchENetROS inference] get_output");
   at::Tensor output = pt_wrapper_.get_output(input_tensor);
   // Calculate argmax to get a label on each pixel
-  // at::Tensor output_args = at::argmax(output, 1).to(torch::kCPU).to(at::kByte);
-//  ROS_INFO("[PyTorchENetROS inference] get_argmax");
   at::Tensor output_args = pt_wrapper_.get_argmax(output);
 
   // Convert to OpenCV
-  // cv::Mat mat(height, width, CV_8U, output_args[0]. template data<uint8_t>());
   cv::Mat label;
-//  ROS_INFO("[PyTorchENetROS inference] tensor2img");
   pt_wrapper_.tensor2img(output_args[0], label);
 
   // Set the size
   cv::Size s_orig(width_orig, height_orig);
   // Resize the input image back to the original size
-//  cv::resize(label, label, s_orig, cv::INTER_NEAREST);
+  cv::resize(label, label, s_orig, cv::INTER_NEAREST);
 
   cv::Mat color_label;
-//  cv::applyColorMap(mat, color_label, cv::COLORMAP_JET);
   label_to_color(label, color_label);
 
   // Alpha blend
@@ -133,15 +129,10 @@ PyTorchENetROS::inference(cv::Mat & input_img)
   cv::addWeighted(input_img, 1.0-alpha_, color_label, alpha_, 0.0, alpha_blended_img);
 
   // Generate an image message
-//  ROS_INFO("[PyTorchENetROS inference] cv_bridge to image msg");
   sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
 //  sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
   sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", alpha_blended_img).toImageMsg();
   
-
-//  sensor_msgs::ImagePtr color_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
-  
-//  ROS_INFO("[PyTorchENetROS inference] Publish");
   return std::forward_as_tuple(label_msg, color_label_msg);
 }
 
@@ -162,11 +153,11 @@ cv_bridge::CvImagePtr
 PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
+
   // Convert the image message to a cv_bridge object
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-//    ROS_INFO("[PyTorchENetROS image_callback] Convert to cv_bridge object");
   }
   catch (cv_bridge::Exception& e)
   {
@@ -184,11 +175,11 @@ cv_bridge::CvImagePtr
 PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::Image msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
+
   // Convert the image message to a cv_bridge object
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-//    ROS_INFO("[PyTorchENetROS image_callback] Convert to cv_bridge object");
   }
   catch (cv_bridge::Exception& e)
   {

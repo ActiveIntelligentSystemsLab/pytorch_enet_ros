@@ -2,6 +2,8 @@
 #define PYTORCH_CPP_WRAPPER
 
 #include <torch/script.h> // One-stop header.
+#include <torch/data/transforms/tensor.h> // One-stop header.
+#include <c10/util/ArrayRef.h>
 #include <opencv2/opencv.hpp>
 #include "opencv2/highgui/highgui.hpp"
 
