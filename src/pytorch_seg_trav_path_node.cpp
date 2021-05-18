@@ -5,7 +5,7 @@
  */
 
 #include<ros/ros.h>
-#include<pytorch_enet_ros/pytorch_seg_trav_path.h>
+#include<pytorch_enet_ros/pytorch_seg_trav_path_ros.h>
 
 int main(int argc, char* argv[]) {
   // Initialize the node

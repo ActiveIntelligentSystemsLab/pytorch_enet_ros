@@ -4,7 +4,7 @@
  *
  */
 
-#include <pytorch_enet_ros/pytorch_seg_trav_path.h>
+#include <pytorch_enet_ros/pytorch_seg_trav_path_ros.h>
 
 PyTorchSegTravPathROS::PyTorchSegTravPathROS(ros::NodeHandle & nh) 
   : it_(nh), nh_(nh)
@@ -13,6 +13,8 @@ PyTorchSegTravPathROS::PyTorchSegTravPathROS(ros::NodeHandle & nh)
   pub_label_image_ = it_.advertise("label", 1);
   pub_color_image_ = it_.advertise("color_label", 1);
   pub_prob_image_ = it_.advertise("prob", 1);
+  pub_start_point_ = nh_.advertise<geometry_msgs::PointStamped>("start_point", 1);
+  pub_end_point_ = nh_.advertise<geometry_msgs::PointStamped>("end_point", 1);
   get_label_image_server_ = nh_.advertiseService("get_label_image", &PyTorchSegTravPathROS::image_inference_srv_callback, this);
 
   // Import the model
@@ -46,8 +48,8 @@ PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
   sensor_msgs::ImagePtr prob_msg;
-  geometry_msgs::PointPtr start_point_msg;
-  geometry_msgs::PointPtr end_point_msg;
+  geometry_msgs::PointStampedPtr start_point_msg;
+  geometry_msgs::PointStampedPtr end_point_msg;
   std::tie(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg) = inference(cv_ptr->image);
 
   // Set header
@@ -58,6 +60,8 @@ PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   pub_label_image_.publish(label_msg);
   pub_color_image_.publish(color_label_msg);
   pub_prob_image_.publish(prob_msg);
+  pub_start_point_.publish(start_point_msg);
+  pub_end_point_.publish(end_point_msg);
 }
 
 /*
@@ -76,8 +80,8 @@ PyTorchSegTravPathROS::image_inference_srv_callback(semantic_segmentation_srvs::
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
   sensor_msgs::ImagePtr prob_msg;
-  geometry_msgs::PointPtr start_point_msg;
-  geometry_msgs::PointPtr end_point_msg;
+  geometry_msgs::PointStampedPtr start_point_msg;
+  geometry_msgs::PointStampedPtr end_point_msg;
   std::tie(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg) = inference(cv_ptr->image);
 
   res.label_img = *label_msg;
@@ -90,7 +94,7 @@ PyTorchSegTravPathROS::image_inference_srv_callback(semantic_segmentation_srvs::
 /*
  * inference : Forward the given input image through the network and return the inference result
  */
-std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, geometry_msgs::PointPtr, geometry_msgs::PointPtr>
+std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
 PyTorchSegTravPathROS::inference(cv::Mat & input_img)
 {
 
@@ -145,19 +149,27 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
   sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
   sensor_msgs::ImagePtr prob_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", prob_cv).toImageMsg();
-  geometry_msgs::PointPtr start_point_msg(new geometry_msgs::Point), end_point_msg(new geometry_msgs::Point);
-  ROS_INFO("Let's get points");
-  points = points.to(torch::kCPU);
-  auto points_a = points.accessor<float,2>();
-  start_point_msg->x = points_a[0][0] * width_orig;
-  start_point_msg->y = points_a[0][1] * height_orig;
-  end_point_msg->x = points_a[0][2] * width_orig;
-  end_point_msg->y = points_a[0][3] * height_orig;
+  geometry_msgs::PointStampedPtr start_point_msg(new geometry_msgs::PointStamped), end_point_msg(new geometry_msgs::PointStamped);
+  std::tie(start_point_msg, end_point_msg) = tensor_to_points(points, width_orig, height_orig);
   
-  ROS_INFO("Start: (%.3f, %.3f), End: (%.3f, %.3f)", start_point_msg->x, start_point_msg->y, end_point_msg->x, end_point_msg->y);
-
-
   return std::forward_as_tuple(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg);
+}
+
+std::tuple<geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
+PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int & width, const int & height) {
+  geometry_msgs::PointStampedPtr start_point_msg(new geometry_msgs::PointStamped), end_point_msg(new geometry_msgs::PointStamped);
+  at::Tensor points = point_tensor.to(torch::kCPU);
+  auto points_a = points.accessor<float, 2>();
+  start_point_msg->header.stamp = ros::Time::now();
+  start_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
+  end_point_msg->header.stamp = ros::Time::now();
+  end_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
+  start_point_msg->point.x = points_a[0][0] * width;
+  start_point_msg->point.y = points_a[0][1] * height;
+  end_point_msg->point.x = points_a[0][2] * width;
+  end_point_msg->point.y = points_a[0][3] * height;
+
+  return std::forward_as_tuple(start_point_msg, end_point_msg);
 }
 
 /*

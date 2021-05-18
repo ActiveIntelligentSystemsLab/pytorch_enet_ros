@@ -17,6 +17,8 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   cv_bridge
   semantic_segmentation_srvs
+  tf2
+  tf2_ros
 )
 
 find_package(Torch REQUIRED)
@@ -45,7 +47,7 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
   src/pytorch_enet_ros.cpp
-  src/pytorch_seg_trav_path.cpp
+  src/pytorch_seg_trav_path_ros.cpp
   src/pytorch_cpp_wrapper_seg_trav.cpp
   src/pytorch_cpp_wrapper_seg_trav_path.cpp
   src/pytorch_cpp_wrapper_base.cpp
