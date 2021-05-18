@@ -6,7 +6,7 @@
 
 
 #include <torch/torch.h>
-#include "pytorch_cpp_wrapper/pytorch_cpp_wrapper.h"
+#include "pytorch_cpp_wrapper/pytorch_cpp_wrapper_base.h"
 #include <torch/script.h> // One-stop header.
 #include <torch/data/transforms/tensor.h> // One-stop header.
 #include <c10/util/ArrayRef.h>
@@ -14,33 +14,20 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <typeinfo>
 
-//namespace mpl {
+PyTorchCppWrapperBase::PyTorchCppWrapperBase() {}
 
-PyTorchCppWrapper::PyTorchCppWrapper() {
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  
-}
-
-PyTorchCppWrapper::PyTorchCppWrapper(const std::string filename) {
+PyTorchCppWrapperBase::PyTorchCppWrapperBase(const std::string & filename) {
   // Import
   import_module(filename);
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  
 }
 
-PyTorchCppWrapper::PyTorchCppWrapper(const char* filename) {
+PyTorchCppWrapperBase::PyTorchCppWrapperBase(const char* filename) {
   // Import
   import_module(std::string(filename));
-
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  
 }
 
 bool
-PyTorchCppWrapper::import_module(const std::string filename)
+PyTorchCppWrapperBase::import_module(const std::string & filename)
 {
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
@@ -59,7 +46,7 @@ PyTorchCppWrapper::import_module(const std::string filename)
 }
 
 void
-PyTorchCppWrapper::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool use_gpu)
+PyTorchCppWrapperBase::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool & use_gpu)
 {
   // Get the size of the input image
   int height = img.size().height;
@@ -77,7 +64,7 @@ PyTorchCppWrapper::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool use
 }
 
 void
-PyTorchCppWrapper::tensor2img(at::Tensor tensor, cv::Mat & img)
+PyTorchCppWrapperBase::tensor2img(at::Tensor tensor, cv::Mat & img)
 {
   // Get the size of the input image
   int height = tensor.sizes()[0];
@@ -89,36 +76,11 @@ PyTorchCppWrapper::tensor2img(at::Tensor tensor, cv::Mat & img)
   img = cv::Mat(height, width, CV_8U, tensor. template data<uint8_t>());
 }
 
-//at::Tensor
-std::tuple<at::Tensor, at::Tensor>
-PyTorchCppWrapper::get_output(at::Tensor input_tensor)
-{
-  // Execute the model and turn its output into a tensor.
-  auto outputs_tmp = module_.forward({input_tensor}); //.toTuple();
-
-  auto outputs = outputs_tmp.toTuple();
-
-  at::Tensor output1 = outputs->elements()[0].toTensor();
-  at::Tensor output2 = outputs->elements()[1].toTensor();
-  at::Tensor prob = outputs->elements()[2].toTensor();
-
-  // Divide probability by c
-  prob = torch::sigmoid(prob) / 0.3;
-  // Limit the values in range [0, 1]
-  prob = at::clamp(prob, 0.0, 1.0);
-
-//  return output1 + 0.5 * output2;
-  at::Tensor segmentation = output1 + 0.5 * output2;
-
-  return std::forward_as_tuple(segmentation, prob);
-}
-
 at::Tensor 
-PyTorchCppWrapper::get_argmax(at::Tensor input_tensor)
+PyTorchCppWrapperBase::get_argmax(at::Tensor input_tensor)
 {
   // Calculate argmax to get a label on each pixel
   at::Tensor output = at::argmax(input_tensor, 1).to(torch::kCPU).to(at::kByte);
 
   return output;
 }
-//} // namespace mpl
