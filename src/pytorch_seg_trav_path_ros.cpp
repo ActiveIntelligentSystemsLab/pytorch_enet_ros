@@ -124,9 +124,6 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   at::Tensor prob;
   at::Tensor points;
   std::tie(segmentation, prob, points) = pt_wrapper_.get_output(input_tensor);
-//  at::Tensor output = pt_wrapper_.get_output(input_tensor);
-  // Calculate argmax to get a label on each pixel
-//  at::Tensor output_args = pt_wrapper_.get_argmax(output);
 
   at::Tensor output_args = pt_wrapper_.get_argmax(segmentation);
 
@@ -155,16 +152,29 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   return std::forward_as_tuple(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg);
 }
 
+/** 
+ * @brief Convert a tensor with a size of (1, 4) to start and end points (x, y)
+ * @param[in] point_tensor  (1, 4) tensor
+ * @param[in] width         Original width of the image
+ * @param[in] height        Original height of the image
+ * @return                  A tuple of start and end points as geometry_msgs::PointStampedPtr
+ */
 std::tuple<geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
 PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int & width, const int & height) {
   geometry_msgs::PointStampedPtr start_point_msg(new geometry_msgs::PointStamped), end_point_msg(new geometry_msgs::PointStamped);
+  // Important: put the data on the CPU before accessing the data.
+  // Absense of this code will result in runtime error.
   at::Tensor points = point_tensor.to(torch::kCPU);
   auto points_a = points.accessor<float, 2>();
+
+  // Initialize messgaes
   start_point_msg->header.stamp = ros::Time::now();
   start_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
   end_point_msg->header.stamp = ros::Time::now();
   end_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
-  start_point_msg->point.x = points_a[0][0] * width;
+  // Point tensor has coordinate values normalized with the width and height.
+  // Therefore each value is multiplied by width or height.
+  start_point_mse->point.x = points_a[0][0] * width;
   start_point_msg->point.y = points_a[0][1] * height;
   end_point_msg->point.x = points_a[0][2] * width;
   end_point_msg->point.y = points_a[0][3] * height;
