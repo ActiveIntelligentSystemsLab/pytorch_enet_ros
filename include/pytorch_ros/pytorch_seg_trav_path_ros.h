@@ -38,10 +38,7 @@ private:
   image_transport::Publisher  pub_prob_image_;
   ros::Publisher pub_start_point_;
   ros::Publisher pub_end_point_;
-
-  // For listening to messages
-  tf2_ros::Buffer tf_buffer_;
-  tf2_ros::TransformListener * tf_listener_;
+  ros::Time stamp_of_current_image_;
 
   PyTorchCppWrapperSegTravPath pt_wrapper_;
 

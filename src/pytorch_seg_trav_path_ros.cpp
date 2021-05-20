@@ -47,6 +47,7 @@ PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
 
   // Convert the image message to a cv_bridge object
   cv_bridge::CvImagePtr cv_ptr = msg_to_cv_bridge(msg);
+  stamp_of_current_image_ = msg->header.stamp;
 
   // Run inference
   sensor_msgs::ImagePtr label_msg;
@@ -178,9 +179,9 @@ PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int
   auto points_a = points.accessor<float, 2>();
 
   // Initialize messgaes
-  start_point_msg->header.stamp = ros::Time::now();
+  start_point_msg->header.stamp = stamp_of_current_image_;//ros::Time::now();
   start_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
-  end_point_msg->header.stamp = ros::Time::now();
+  end_point_msg->header.stamp = stamp_of_current_image_;//ros::Time::now();
   end_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
   // Point tensor has coordinate values normalized with the width and height.
   // Therefore each value is multiplied by width or height.
