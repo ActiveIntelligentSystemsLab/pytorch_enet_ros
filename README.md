@@ -45,6 +45,28 @@ This package is **only tested in the virtual environment**.
 
     Return inference results (segmentation and traversability) for a given image.
 
+### **2.2 visualizer.py**
+
+#### **2.2.1 Subscribed topics**
+
+- `image` ([sensor_msgs/Image](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html))
+
+    An input image
+
+- `start_point` ([geometry_msgs/PointStamped](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/PointStamped.html))
+
+    Start point of the estimated path line from the inference node
+
+- `end_point` ([geometry_msgs/PointStamped](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/PointStamped.html))
+
+    End point of the estimated path line from the inference node
+
+#### **2.2.2 Published topics**
+
+- `image_with_path` ([sensor_msgs/Image](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html))
+
+    An image with the path overlaid
+
 ## 3. How to run the node
 
 ```
