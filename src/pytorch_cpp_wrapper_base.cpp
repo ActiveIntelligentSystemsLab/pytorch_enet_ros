@@ -5,7 +5,8 @@
  */
 
 
-#include "pytorch_cpp_wrapper/pytorch_cpp_wrapper.h"
+#include <torch/torch.h>
+#include "pytorch_cpp_wrapper/pytorch_cpp_wrapper_base.h"
 #include <torch/script.h> // One-stop header.
 #include <torch/data/transforms/tensor.h> // One-stop header.
 #include <c10/util/ArrayRef.h>
@@ -13,33 +14,25 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <typeinfo>
 
-//namespace mpl {
+PyTorchCppWrapperBase::PyTorchCppWrapperBase() {}
 
-PyTorchCppWrapper::PyTorchCppWrapper() {
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  
-}
-
-PyTorchCppWrapper::PyTorchCppWrapper(const std::string filename) {
-  // Import
+PyTorchCppWrapperBase::PyTorchCppWrapperBase(const std::string & filename) {
+  // Import model
   import_module(filename);
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  
 }
 
-PyTorchCppWrapper::PyTorchCppWrapper(const char* filename) {
-  // Import
+PyTorchCppWrapperBase::PyTorchCppWrapperBase(const char* filename) {
+  // Import model
   import_module(std::string(filename));
-
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  
 }
 
+/**
+ * @brief import a network 
+ * @param filename
+ * @return true if import succeeded 
+ */
 bool
-PyTorchCppWrapper::import_module(const std::string filename)
+PyTorchCppWrapperBase::import_module(const std::string & filename)
 {
   try {
     // Deserialize the ScriptModule from a file using torch::jit::load().
@@ -52,13 +45,19 @@ PyTorchCppWrapper::import_module(const std::string filename)
     return true;
   }
   catch (const c10::Error& e) {
-    std::cerr << "error loading the model\n";
+    std::cerr << e.what();
     return false;
   }
 }
 
+/**
+ * @brief convert an image(cv::Mat) to a tensor (at::Tensor)
+ * @param[in] img
+ * @param[out] tensor
+ * @param[in] whether to use GPU
+ */
 void
-PyTorchCppWrapper::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool use_gpu)
+PyTorchCppWrapperBase::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool & use_gpu)
 {
   // Get the size of the input image
   int height = img.size().height;
@@ -75,38 +74,34 @@ PyTorchCppWrapper::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool use
   tensor = at::transpose(tensor, 1, 3); 
 }
 
+/**
+ * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
+ * @param[in] tensor
+ * @param[out] img
+ */
 void
-PyTorchCppWrapper::tensor2img(at::Tensor tensor, cv::Mat & img)
+PyTorchCppWrapperBase::tensor2img(at::Tensor tensor, cv::Mat & img)
 {
-  std::cout << tensor.sizes() << std::endl;
   // Get the size of the input image
   int height = tensor.sizes()[0];
   int width  = tensor.sizes()[1];
+
+  tensor = tensor.to(torch::kCPU);
 
   // Convert to OpenCV
   img = cv::Mat(height, width, CV_8U, tensor. template data<uint8_t>());
 }
 
-at::Tensor
-PyTorchCppWrapper::get_output(at::Tensor input_tensor)
-{
-  // Execute the model and turn its output into a tensor.
-  auto outputs_tmp = module_.forward({input_tensor}); //.toTuple();
-
-  auto outputs = outputs_tmp.toTuple();
-
-  at::Tensor output1 = outputs->elements()[0].toTensor();
-  at::Tensor output2 = outputs->elements()[1].toTensor();
-
-  return output1 + 0.5 * output2;
-}
-
+/**
+ * @brief Take element-wise argmax 
+ * @param[in]  tensor
+ * @param[out] tensor that has index of max value in each element
+ */
 at::Tensor 
-PyTorchCppWrapper::get_argmax(at::Tensor input_tensor)
+PyTorchCppWrapperBase::get_argmax(at::Tensor input_tensor)
 {
   // Calculate argmax to get a label on each pixel
   at::Tensor output = at::argmax(input_tensor, 1).to(torch::kCPU).to(at::kByte);
 
   return output;
 }
-//} // namespace mpl
