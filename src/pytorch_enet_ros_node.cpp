@@ -5,7 +5,7 @@
  */
 
 #include<ros/ros.h>
-#include<pytorch_enet_ros/pytorch_enet_ros.h>
+#include<pytorch_ros/pytorch_enet_ros.h>
 
 int main(int argc, char* argv[]) {
   // Initialize the node

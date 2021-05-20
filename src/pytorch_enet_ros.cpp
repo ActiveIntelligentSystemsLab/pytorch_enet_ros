@@ -4,7 +4,7 @@
  *
  */
 
-#include <pytorch_enet_ros/pytorch_enet_ros.h>
+#include <pytorch_ros/pytorch_enet_ros.h>
 
 PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh) 
   : it_(nh), nh_(nh)

@@ -13,6 +13,11 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <typeinfo>
 
+  /**
+   * @brief Get outputs from the model
+   * @param[in] input_tensor Input tensor
+   * @return A tuple of output tensors (segmentation and traversability)
+   */
 std::tuple<at::Tensor, at::Tensor>
 PyTorchCppWrapperSegTrav::get_output(at::Tensor input_tensor)
 {

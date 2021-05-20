@@ -2,18 +2,18 @@
 <launch>
   <arg name="image" default="/camera/rgb/image_rect_color" />
 
-  <node pkg="pytorch_enet_ros" type="pytorch_seg_trav_path_node" name="pytorch_seg_trav_path_node" output="screen">
+  <node pkg="pytorch_ros" type="pytorch_seg_trav_path_node" name="pytorch_seg_trav_path_node" output="screen">
     <!--
     <remap from="~image" to="/kinect2/qhd/image_color_rect" />
-    <param name="model_file" value="$(find pytorch_enet_ros)/models/ENet_camvid.pt" />
-    <param name="colormap" value="$(find pytorch_enet_ros)/images/camvid12.png" />
+    <param name="model_file" value="$(find pytorch_ros)/models/ENet_camvid.pt" />
+    <param name="colormap" value="$(find pytorch_ros)/images/camvid12.png" />
     -->
     <remap from="~image" to="$(arg image)" />
-    <param name="model_file" value="$(find pytorch_enet_ros)/models/espdnet_ue_trav_path_20210518-221714.pt" />
+    <param name="model_file" value="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210518-221714.pt" />
     <!--
-    <param name="model_file" value="$(find pytorch_enet_ros)/models/ENet_greenhouse.pt" />
+    <param name="model_file" value="$(find pytorch_ros)/models/ENet_greenhouse.pt" />
     -->
-    <param name="colormap" value="$(find pytorch_enet_ros)/images/greenhouse4.png" />
+    <param name="colormap" value="$(find pytorch_ros)/images/greenhouse4.png" />
     <param name="model_name" value="greenhouse" />
   </node>
 </launch>

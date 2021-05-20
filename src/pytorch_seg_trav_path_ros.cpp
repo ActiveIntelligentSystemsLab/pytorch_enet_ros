@@ -4,7 +4,7 @@
  *
  */
 
-#include <pytorch_enet_ros/pytorch_seg_trav_path_ros.h>
+#include <pytorch_ros/pytorch_seg_trav_path_ros.h>
 
 PyTorchSegTravPathROS::PyTorchSegTravPathROS(ros::NodeHandle & nh) 
   : it_(nh), nh_(nh)
@@ -36,6 +36,10 @@ PyTorchSegTravPathROS::PyTorchSegTravPathROS(ros::NodeHandle & nh)
   
 }
 
+/** 
+ * @brief Image callback
+ * @param[in] msg  Message
+ */
 void
 PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
 {
@@ -57,6 +61,7 @@ PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   color_label_msg->header = msg->header;
   prob_msg->header = msg->header;
 
+  // Publish the messages
   pub_label_image_.publish(label_msg);
   pub_color_image_.publish(color_label_msg);
   pub_prob_image_.publish(prob_msg);
@@ -64,8 +69,10 @@ PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   pub_end_point_.publish(end_point_msg);
 }
 
-/*
- * image_inference_srv_callback : Callback for the service
+/** 
+ * @brief Main function for inference using the model
+ * @param[in] input_image OpenCV image 
+ * @return    A tuple of messages of the inference results
  */
 bool
 PyTorchSegTravPathROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabelAndProbability::Request  & req,
@@ -91,8 +98,11 @@ PyTorchSegTravPathROS::image_inference_srv_callback(semantic_segmentation_srvs::
   return true;
 }
 
-/*
- * inference : Forward the given input image through the network and return the inference result
+/** 
+ * @brief Service callback
+ * @param[in] req  Request
+ * @param[in] res  Response
+ * @return    True if the service succeeded
  */
 std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
 PyTorchSegTravPathROS::inference(cv::Mat & input_img)
@@ -117,7 +127,6 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   for(int i = 0; i < mean_vec.size(); i++) {
     input_tensor[0][i] = (input_tensor[0][i] - mean_vec[i]) / std_vec[i];
   }
-//  std::cout << input_tensor.sizes() << std::endl;
 
   // Execute the model and turn its output into a tensor.
   at::Tensor segmentation;
@@ -160,7 +169,8 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
  * @return                  A tuple of start and end points as geometry_msgs::PointStampedPtr
  */
 std::tuple<geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
-PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int & width, const int & height) {
+PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int & width, const int & height)
+{
   geometry_msgs::PointStampedPtr start_point_msg(new geometry_msgs::PointStamped), end_point_msg(new geometry_msgs::PointStamped);
   // Important: put the data on the CPU before accessing the data.
   // Absense of this code will result in runtime error.
@@ -174,7 +184,7 @@ PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int
   end_point_msg->header.frame_id = "kinect2_rgb_optical_frame";
   // Point tensor has coordinate values normalized with the width and height.
   // Therefore each value is multiplied by width or height.
-  start_point_mse->point.x = points_a[0][0] * width;
+  start_point_msg->point.x = points_a[0][0] * width;
   start_point_msg->point.y = points_a[0][1] * height;
   end_point_msg->point.x = points_a[0][2] * width;
   end_point_msg->point.y = points_a[0][3] * height;
@@ -182,18 +192,22 @@ PyTorchSegTravPathROS::tensor_to_points(const at::Tensor point_tensor, const int
   return std::forward_as_tuple(start_point_msg, end_point_msg);
 }
 
-/*
- * label_to_color : Convert a label image to color label image for visualization
- */ 
+/** 
+  * @brief Convert a label image to color label image for visualization
+  * @param[in]  label        Label image
+  * @param[out] color_label  Color image mapped from the label image
+  */
 void
-PyTorchSegTravPathROS::label_to_color(cv::Mat& label, cv::Mat& color)
+PyTorchSegTravPathROS::label_to_color(cv::Mat& label, cv::Mat& color_label)
 {
-  cv::cvtColor(label, color, CV_GRAY2BGR);
-  cv::LUT(color, colormap_, color);
+  cv::cvtColor(label, color_label, CV_GRAY2BGR);
+  cv::LUT(color_label, colormap_, color_label);
 }
 
-/*
- * msg_to_cv_bridge : Generate a cv_image pointer instance from a given image message pointer
+/** 
+ * @brief Convert Image message to cv_bridge
+ * @param[in] msg  Pointer of image message
+ * @return    cv_bridge
  */
 cv_bridge::CvImagePtr
 PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
@@ -214,8 +228,10 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
   return cv_ptr;
 }
 
-/*
- * msg_to_cv_bridge : Generate a cv_image pointer instance from a given message
+/** 
+ * @brief Convert Image message to cv_bridge
+ * @param[in] msg  Image message
+ * @return    cv_bridge
  */
 cv_bridge::CvImagePtr
 PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::Image msg)
@@ -235,14 +251,3 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::Image msg)
 
   return cv_ptr;
 }
-
-// cv::Mat PyTorchSegTravPathROS::getLookUpTable(const std::string dataset)
-// {
-//   cv::Mat lookUpTable(1, 256, CV_8UC3);
-// 
-//   if(dataset == "greenhouse") {
-// 
-//   } else if(dataset == "camvid") {
-// 
-//   }
-// }

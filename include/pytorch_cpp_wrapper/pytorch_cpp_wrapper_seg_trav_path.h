@@ -18,6 +18,11 @@ private :
   float c_{0.3};
 
 public:
+  /**
+   * @brief Get outputs from the model
+   * @param[in] input_tensor Input tensor
+   * @return A tuple of output tensors (segmentation, traversability, and path (points))
+   */
   std::tuple<at::Tensor, at::Tensor, at::Tensor> get_output(at::Tensor input_tensor);
 };
 #endif

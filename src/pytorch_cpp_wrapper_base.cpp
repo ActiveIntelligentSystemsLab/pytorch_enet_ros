@@ -17,15 +17,20 @@
 PyTorchCppWrapperBase::PyTorchCppWrapperBase() {}
 
 PyTorchCppWrapperBase::PyTorchCppWrapperBase(const std::string & filename) {
-  // Import
+  // Import model
   import_module(filename);
 }
 
 PyTorchCppWrapperBase::PyTorchCppWrapperBase(const char* filename) {
-  // Import
+  // Import model
   import_module(std::string(filename));
 }
 
+/**
+ * @brief import a network 
+ * @param filename
+ * @return true if import succeeded 
+ */
 bool
 PyTorchCppWrapperBase::import_module(const std::string & filename)
 {
@@ -45,6 +50,12 @@ PyTorchCppWrapperBase::import_module(const std::string & filename)
   }
 }
 
+/**
+ * @brief convert an image(cv::Mat) to a tensor (at::Tensor)
+ * @param[in] img
+ * @param[out] tensor
+ * @param[in] whether to use GPU
+ */
 void
 PyTorchCppWrapperBase::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool & use_gpu)
 {
@@ -63,6 +74,11 @@ PyTorchCppWrapperBase::img2tensor(cv::Mat & img, at::Tensor & tensor, const bool
   tensor = at::transpose(tensor, 1, 3); 
 }
 
+/**
+ * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
+ * @param[in] tensor
+ * @param[out] img
+ */
 void
 PyTorchCppWrapperBase::tensor2img(at::Tensor tensor, cv::Mat & img)
 {
@@ -76,6 +92,11 @@ PyTorchCppWrapperBase::tensor2img(at::Tensor tensor, cv::Mat & img)
   img = cv::Mat(height, width, CV_8U, tensor. template data<uint8_t>());
 }
 
+/**
+ * @brief Take element-wise argmax 
+ * @param[in]  tensor
+ * @param[out] tensor that has index of max value in each element
+ */
 at::Tensor 
 PyTorchCppWrapperBase::get_argmax(at::Tensor input_tensor)
 {

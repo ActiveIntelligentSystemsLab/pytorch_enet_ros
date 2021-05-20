@@ -20,7 +20,6 @@ public:
   PyTorchCppWrapperBase();
   PyTorchCppWrapperBase(const std::string & filename);
   PyTorchCppWrapperBase(const char* filename);
-//  virtual ~PyTorchCppWrapperBase();
 
   /**
    * @brief import a network 
@@ -45,19 +44,11 @@ public:
   void tensor2img(at::Tensor tensor, cv::Mat & img);
 
   /**
-   * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
-   * @param[in] tensor
-   * @param[out] img
+   * @brief Take element-wise argmax 
+   * @param[in]  tensor
+   * @param[out] tensor that has index of max value in each element
    */
   at::Tensor get_argmax(at::Tensor input_tensor);
-
-  /**
-   * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
-   * @param[in] input_tensor
-   * @param[out] Output from the network (depends on the implementation)
-   */
-//  virtual auto get_output(at::Tensor & input_tensor) = 0;
-  
 };
 //}
 #endif

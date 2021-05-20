@@ -14,7 +14,11 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <typeinfo>
 
-//at::Tensor
+/**
+ * @brief Get outputs from the model
+ * @param[in] input_tensor Input tensor
+ * @return A tuple of output tensors (segmentation, traversability, and path (points))
+ */
 std::tuple<at::Tensor, at::Tensor, at::Tensor>
 PyTorchCppWrapperSegTravPath::get_output(at::Tensor input_tensor)
 {
@@ -40,6 +44,3 @@ PyTorchCppWrapperSegTravPath::get_output(at::Tensor input_tensor)
 
   return std::forward_as_tuple(segmentation, prob, path);
 }
-
-
-//} // namespace mpl
