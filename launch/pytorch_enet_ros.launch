@@ -9,4 +9,10 @@
     <param name="colormap" value="$(find pytorch_ros)/images/greenhouse4.png" />
     <param name="model_name" value="greenhouse" />
   </node>
+
+  <node pkg="pytorch_ros" type="visualizer.py" name="visualizer" output="screen">
+    <remap from="image" to="$(arg image)" />
+    <remap from="start_point" to="/pytorch_seg_trav_path_node/start_point" />
+    <remap from="end_point" to="/pytorch_seg_trav_path_node/end_point" />
+  </node>
 </launch>
