@@ -1,23 +1,31 @@
-# pytorch_ros
+# pytorch_scene_recognition_ros
 
 ## 1. Overview
 
-A ROS package to use [LibTorch](https://pytorch.org/cppdocs/), a PyTorch C++ API, for inference on a trained model.
+A ROS package to use [LibTorch](https://pytorch.org/cppdocs/), a PyTorch C++ API, for inference with our scene recognition models.
 
 A Docker environment for running this package is [here](https://github.com/ActiveIntelligentSystemsLab/pytorch-enet-docker).
 This package is **only tested in the virtual environment**.
 
-## 2. Nodes
+## 2. Requirements
 
-### 2.1 `pytorch_seg_trav_path_node`
+- PyTorch with LibTorch built
+  - Tested with 1.5.0
+- [semantic_segmentation_srvs/GetLabelAndProbability](https://github.com/ActiveIntelligentSystemsLab/aisl_utils/blob/master/aisl_srvs/semantic_segmentation_srv/srv/GetLabelAndProbability.srv)
 
-#### **2.1.1 Subscribed topics**
+## 3. Nodes
+
+### 3.1 `pytorch_seg_trav_path_node`
+
+A node to use a multi-task model for semantic segmentation, traversability estimation, and path estimation.
+
+#### **3.1.1 Subscribed topics**
 
 - `image` ([sensor_msgs/Image](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html))
 
     An input image
 
-#### **2.1.2 Published topics**
+#### **3.1.2 Published topics**
 
 - `label` ([sensor_msgs/Image](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html))
 
@@ -39,15 +47,15 @@ This package is **only tested in the virtual environment**.
 
     End point of the estimated path line
 
-#### **2.1.3 Service**
+#### **3.1.3 Service**
 
 - `get_label_image` ([semantic_segmentation_srvs/GetLabelAndProbability](https://github.com/ActiveIntelligentSystemsLab/aisl_utils/blob/master/aisl_srvs/semantic_segmentation_srv/srv/GetLabelAndProbability.srv))
 
     Return inference results (segmentation and traversability) for a given image.
 
-### **2.2 visualizer.py**
+### **3.2 visualizer.py**
 
-#### **2.2.1 Subscribed topics**
+#### **3.2.1 Subscribed topics**
 
 - `image` ([sensor_msgs/Image](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html))
 
@@ -61,19 +69,19 @@ This package is **only tested in the virtual environment**.
 
     End point of the estimated path line from the inference node
 
-#### **2.2.2 Published topics**
+#### **3.2.2 Published topics**
 
 - `image_with_path` ([sensor_msgs/Image](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/Image.html))
 
     An image with the path overlaid
 
-## 3. How to run the node
+## 4. How to run the node
 
 ```
 roslaunch pytorch_enet_ros.launch image:=<image topic name> model_name:=<model name>
 ```
 
-## 4. Weight files
+## 5. Weight files
 
 The ROS nodes in this package use models saved as a serialized Torch Script file.
 
@@ -86,7 +94,7 @@ If the version of PyTorch that runs this ROS package and that you generate your 
 
 For example, if you use [our Docker environment](https://github.com/ActiveIntelligentSystemsLab/pytorch-enet-docker), the weights should be generated using PyTorch 1.5.0.
 
-## 5. Color map
+## 6. Color map
 
 For visualization of semantic segmentation, we use a color map image.
 
