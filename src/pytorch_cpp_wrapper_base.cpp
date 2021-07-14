@@ -105,3 +105,21 @@ PyTorchCppWrapperBase::get_argmax(at::Tensor input_tensor)
 
   return output;
 }
+
+  /**
+   * @brief Take element-wise entropy 
+   * @param[in]  tensor
+   * @param[out] tensor that has index of max value in each element
+   */
+at::Tensor
+PyTorchCppWrapperBase::get_entropy(at::Tensor input_tensor)
+{
+  input_tensor.to(torch::kCUDA);
+  // Calculate the entropy at each pixel
+  at::Tensor log_p = torch::log_softmax(input_tensor, /*dim=*/1);//at::argmax(input_tensor, 1).to(torch::kCPU).to(at::kByte);
+  at::Tensor p = torch::log_softmax(input_tensor, /*dim=*/1);
+
+  at::Tensor entropy = torch::sum(p * log_p, /*dim=*/1);
+
+  return entropy;
+}

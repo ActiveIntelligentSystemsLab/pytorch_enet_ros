@@ -49,6 +49,14 @@ public:
    * @param[out] tensor that has index of max value in each element
    */
   at::Tensor get_argmax(at::Tensor input_tensor);
+
+  /**
+   * @brief Take element-wise entropy 
+   * @param[in]  tensor
+   * @param[out] tensor that has index of max value in each element
+   */
+  at::Tensor get_entropy(at::Tensor input_tensor);
+
 };
 //}
 #endif

@@ -133,9 +133,16 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   at::Tensor segmentation;
   at::Tensor prob;
   at::Tensor points;
+  // segmentation: raw output for segmentation (before softmax)
+  // prob: traversability
+  // points: coordinates of the line points
   std::tie(segmentation, prob, points) = pt_wrapper_.get_output(input_tensor);
 
+  // Get class label map by taking argmax of 'segmentation'
   at::Tensor output_args = pt_wrapper_.get_argmax(segmentation);
+
+  // Uncertainty of segmentation
+  at::Tensor uncertainty = pt_wrapper_.get_entropy(segmentation);
 
   // Convert to OpenCV
   cv::Mat label;

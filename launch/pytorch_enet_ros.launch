@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="image" default="/camera/rgb/image_rect_color" />
-  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210518-221714.pt" />
+  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210712-134315.pt" />
 
   <node pkg="pytorch_ros" type="pytorch_seg_trav_path_node" name="pytorch_seg_trav_path_node" output="screen">
     <remap from="~image" to="$(arg image)" />
