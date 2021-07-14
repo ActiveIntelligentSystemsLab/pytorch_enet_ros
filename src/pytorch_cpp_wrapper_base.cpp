@@ -117,9 +117,9 @@ PyTorchCppWrapperBase::get_entropy(at::Tensor input_tensor)
   input_tensor.to(torch::kCUDA);
   // Calculate the entropy at each pixel
   at::Tensor log_p = torch::log_softmax(input_tensor, /*dim=*/1);//at::argmax(input_tensor, 1).to(torch::kCPU).to(at::kByte);
-  at::Tensor p = torch::log_softmax(input_tensor, /*dim=*/1);
+  at::Tensor p = torch::softmax(input_tensor, /*dim=*/1);
 
-  at::Tensor entropy = torch::sum(p * log_p, /*dim=*/1);
+  at::Tensor entropy = -torch::sum(p * log_p, /*dim=*/1);
 
   return entropy;
 }
