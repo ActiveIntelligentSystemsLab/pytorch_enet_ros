@@ -18,6 +18,9 @@ private :
   float c_{0.3};
 
 public:
+  PyTorchCppWrapperSegTravPath(const std::string & filename, const int class_num);
+  PyTorchCppWrapperSegTravPath(const char* filename, const int class_num);
+
   /**
    * @brief Get outputs from the model
    * @param[in] input_tensor Input tensor

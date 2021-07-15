@@ -15,11 +15,13 @@
 class PyTorchCppWrapperBase {
 protected :
   torch::jit::script::Module module_;
+  int class_num_;
+  float max_entropy_;
 
 public:
   PyTorchCppWrapperBase();
-  PyTorchCppWrapperBase(const std::string & filename);
-  PyTorchCppWrapperBase(const char* filename);
+  PyTorchCppWrapperBase(const std::string & filename, const int class_num);
+  PyTorchCppWrapperBase(const char* filename, const int class_num);
 
   /**
    * @brief import a network 
@@ -55,7 +57,7 @@ public:
    * @param[in]  tensor
    * @param[out] tensor that has index of max value in each element
    */
-  at::Tensor get_entropy(at::Tensor input_tensor);
+  at::Tensor get_entropy(at::Tensor input_tensor, const bool normalize);
 
 };
 //}

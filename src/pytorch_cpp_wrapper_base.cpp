@@ -4,7 +4,6 @@
  *
  */
 
-
 #include <torch/torch.h>
 #include "pytorch_cpp_wrapper/pytorch_cpp_wrapper_base.h"
 #include <torch/script.h> // One-stop header.
@@ -13,17 +12,38 @@
 #include <opencv2/opencv.hpp>
 #include "opencv2/highgui/highgui.hpp"
 #include <typeinfo>
+#include <cmath>
 
 PyTorchCppWrapperBase::PyTorchCppWrapperBase() {}
 
-PyTorchCppWrapperBase::PyTorchCppWrapperBase(const std::string & filename) {
+PyTorchCppWrapperBase::PyTorchCppWrapperBase(const std::string & filename, const int class_num)
+  : class_num_(class_num)
+{
   // Import model
   import_module(filename);
+
+  // Calculate the maximum possible entropy 
+  //  to normalize the entropy value in [0, 1].
+  max_entropy_ = 0;
+  const float prob = (float) 1.0 / class_num_;
+  for(int i = 0; i < class_num_; ++i) {
+    max_entropy_ += -prob * std::log(prob);
+  }
 }
 
-PyTorchCppWrapperBase::PyTorchCppWrapperBase(const char* filename) {
+PyTorchCppWrapperBase::PyTorchCppWrapperBase(const char* filename, const int class_num) 
+  : class_num_(class_num)
+{
   // Import model
   import_module(std::string(filename));
+
+  // Calculate the maximum possible entropy 
+  //  to normalize the entropy value in [0, 1].
+  max_entropy_ = 0;
+  const float prob = (float) 1.0 / class_num_;
+  for(int i = 0; i < class_num_; ++i) {
+    max_entropy_ += -prob * std::log(prob);
+  }
 }
 
 /**
@@ -101,7 +121,7 @@ at::Tensor
 PyTorchCppWrapperBase::get_argmax(at::Tensor input_tensor)
 {
   // Calculate argmax to get a label on each pixel
-  at::Tensor output = at::argmax(input_tensor, 1).to(torch::kCPU).to(at::kByte);
+  at::Tensor output = at::argmax(input_tensor, /*dim=*/1).to(torch::kCPU).to(at::kByte);
 
   return output;
 }
@@ -112,7 +132,7 @@ PyTorchCppWrapperBase::get_argmax(at::Tensor input_tensor)
    * @param[out] tensor that has index of max value in each element
    */
 at::Tensor
-PyTorchCppWrapperBase::get_entropy(at::Tensor input_tensor)
+PyTorchCppWrapperBase::get_entropy(at::Tensor input_tensor, const bool normalize = true)
 {
   input_tensor.to(torch::kCUDA);
   // Calculate the entropy at each pixel
@@ -121,5 +141,11 @@ PyTorchCppWrapperBase::get_entropy(at::Tensor input_tensor)
 
   at::Tensor entropy = -torch::sum(p * log_p, /*dim=*/1);
 
+  if(normalize)
+    entropy = entropy / max_entropy_;
+
   return entropy;
 }
+
+
+
