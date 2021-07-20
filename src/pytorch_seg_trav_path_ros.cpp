@@ -137,26 +137,31 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   // prob: traversability
   // points: coordinates of the line points
   std::tie(segmentation, prob, points) = pt_wrapper_ptr_->get_output(input_tensor);
+  prob = (prob[0][0]*255).to(torch::kCPU).to(torch::kByte);
 
   // Get class label map by taking argmax of 'segmentation'
   at::Tensor output_args = pt_wrapper_ptr_->get_argmax(segmentation);
 
   // Uncertainty of segmentation
   at::Tensor uncertainty = pt_wrapper_ptr_->get_entropy(segmentation, true);
+  uncertainty = (uncertainty[0]*255).to(torch::kCPU).to(torch::kByte);
+//  at::Tensor uncertainty = torch::zeros_like(prob[0]);
+
+  // Set the size
+  cv::Size s_orig(width_orig, height_orig);
 
   // Convert to OpenCV
   cv::Mat label;
   cv::Mat prob_cv;
-  cv::Mat uncertainty_cv;
+  cv::Mat uncertainty_cv = cv::Mat::zeros(s_orig.height, s_orig.width, CV_8U);
   // Segmentation label
-  pt_wrapper_ptr_->tensor2img(output_args[0], label);
+  label = pt_wrapper_ptr_->tensor2img(output_args[0]);
+  // Segmentation label
+  uncertainty_cv = pt_wrapper_ptr_->tensor2img(uncertainty);
+//  uncertainty_cv = pt_wrapper_ptr_->tensor2img((uncertainty*255).to(torch::kCPU).to(torch::kByte));
   // Traverability
-  pt_wrapper_ptr_->tensor2img((prob[0][0]*255).to(torch::kByte), prob_cv);
-  // Segmentation label
-  pt_wrapper_ptr_->tensor2img((uncertainty[0]*255).to(torch::kByte), uncertainty_cv);
+  prob_cv = pt_wrapper_ptr_->tensor2img(prob);
 
-  // Set the size
-  cv::Size s_orig(width_orig, height_orig);
   // Resize the input image back to the original size
   cv::resize(label, label, s_orig, cv::INTER_NEAREST);
   cv::resize(prob_cv, prob_cv, s_orig, cv::INTER_LINEAR);
@@ -169,6 +174,7 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   // Generate an image message and point messages
   sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
   sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
+  // Problem: Wrong data is sometimes assigned to 'prob_cv' 
   sensor_msgs::ImagePtr prob_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", prob_cv).toImageMsg();
   sensor_msgs::ImagePtr uncertainty_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", uncertainty_cv).toImageMsg();
   geometry_msgs::PointStampedPtr start_point_msg(new geometry_msgs::PointStamped), end_point_msg(new geometry_msgs::PointStamped);
@@ -233,7 +239,7 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
   // Convert the image message to a cv_bridge object
   try
   {
-    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    cv_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
   }
   catch (cv_bridge::Exception& e)
   {
@@ -257,7 +263,7 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::Image msg)
   // Convert the image message to a cv_bridge object
   try
   {
-    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    cv_ptr = cv_bridge::toCvCopy(msg, msg.encoding);
   }
   catch (cv_bridge::Exception& e)
   {
