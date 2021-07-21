@@ -13,6 +13,14 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <typeinfo>
 
+PyTorchCppWrapperSegTrav::PyTorchCppWrapperSegTrav(const std::string & filename, const int class_num)
+  : PyTorchCppWrapperBase(filename, class_num)
+{ }
+
+PyTorchCppWrapperSegTrav::PyTorchCppWrapperSegTrav(const char* filename, const int class_num)
+  : PyTorchCppWrapperBase(filename, class_num)
+{ }
+
   /**
    * @brief Get outputs from the model
    * @param[in] input_tensor Input tensor

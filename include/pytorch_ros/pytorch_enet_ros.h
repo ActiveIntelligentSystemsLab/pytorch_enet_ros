@@ -33,8 +33,10 @@ private:
   image_transport::Publisher  pub_label_image_;
   image_transport::Publisher  pub_color_image_;
   image_transport::Publisher  pub_prob_image_;
+  image_transport::Publisher  pub_uncertainty_image_;
 
-  PyTorchCppWrapperSegTrav pt_wrapper_;
+//  PyTorchCppWrapperSegTrav pt_wrapper_;
+  std::shared_ptr<PyTorchCppWrapperSegTrav> pt_wrapper_ptr_;
 
   cv::Mat colormap_;
 
@@ -42,7 +44,7 @@ public:
   PyTorchENetROS(ros::NodeHandle & nh); 
 
   void image_callback(const sensor_msgs::ImageConstPtr& msg); 
-  std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr> inference(cv::Mat & input_image);
+  std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr> inference(cv::Mat & input_image);
   bool image_inference_srv_callback(semantic_segmentation_srvs::GetLabelAndProbability::Request  & req,
                                     semantic_segmentation_srvs::GetLabelAndProbability::Response & res);
   cv_bridge::CvImagePtr msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg);

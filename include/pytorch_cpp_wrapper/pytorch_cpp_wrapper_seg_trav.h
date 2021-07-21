@@ -17,6 +17,9 @@ private :
   float c_{0.3};
 
 public:
+  PyTorchCppWrapperSegTrav(const std::string & filename, const int class_num);
+  PyTorchCppWrapperSegTrav(const char* filename, const int class_num);
+
   /**
    * @brief Get outputs from the model
    * @param[in] input_tensor Input tensor

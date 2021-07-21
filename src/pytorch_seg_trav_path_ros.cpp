@@ -145,7 +145,6 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   // Uncertainty of segmentation
   at::Tensor uncertainty = pt_wrapper_ptr_->get_entropy(segmentation, true);
   uncertainty = (uncertainty[0]*255).to(torch::kCPU).to(torch::kByte);
-//  at::Tensor uncertainty = torch::zeros_like(prob[0]);
 
   // Set the size
   cv::Size s_orig(width_orig, height_orig);
