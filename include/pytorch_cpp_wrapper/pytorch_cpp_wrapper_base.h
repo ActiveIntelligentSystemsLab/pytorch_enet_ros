@@ -46,6 +46,13 @@ public:
   void tensor2img(at::Tensor tensor, cv::Mat & img);
 
   /**
+   * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
+   * @param[in] tensor
+   * @return converted CV image
+   */
+  cv::Mat tensor2img(at::Tensor tensor);
+
+  /**
    * @brief Take element-wise argmax 
    * @param[in]  tensor
    * @param[out] tensor that has index of max value in each element

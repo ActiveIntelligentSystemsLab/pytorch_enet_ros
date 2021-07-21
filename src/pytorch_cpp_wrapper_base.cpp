@@ -106,10 +106,26 @@ PyTorchCppWrapperBase::tensor2img(at::Tensor tensor, cv::Mat & img)
   int height = tensor.sizes()[0];
   int width  = tensor.sizes()[1];
 
-  tensor = tensor.to(torch::kCPU);
+//  tensor = tensor.to(torch::kCPU);
 
   // Convert to OpenCV
   img = cv::Mat(height, width, CV_8U, tensor. template data<uint8_t>());
+}
+
+/**
+ * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
+ * @param[in] tensor
+ * @return converted CV image
+ */
+cv::Mat
+PyTorchCppWrapperBase::tensor2img(at::Tensor tensor)
+{
+  // Get the size of the input image
+  int height = tensor.sizes()[0];
+  int width  = tensor.sizes()[1];
+
+  // Convert to OpenCV
+  return cv::Mat(height, width, CV_8U, tensor. template data<uint8_t>());
 }
 
 /**
