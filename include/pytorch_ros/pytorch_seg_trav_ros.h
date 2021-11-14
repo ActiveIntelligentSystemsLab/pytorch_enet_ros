@@ -21,7 +21,7 @@
 #include <memory>
 #include <tuple>
 
-class PyTorchENetROS {
+class PyTorchSegTravROS {
 private:
   ros::NodeHandle nh_;
 
@@ -41,7 +41,7 @@ private:
   cv::Mat colormap_;
 
 public:
-  PyTorchENetROS(ros::NodeHandle & nh); 
+  PyTorchSegTravROS(ros::NodeHandle & nh); 
 
   void image_callback(const sensor_msgs::ImageConstPtr& msg); 
   std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr> inference(cv::Mat & input_image);

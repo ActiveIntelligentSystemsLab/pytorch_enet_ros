@@ -5,19 +5,19 @@
  */
 
 #include<ros/ros.h>
-#include<pytorch_ros/pytorch_enet_ros.h>
+#include<pytorch_ros/pytorch_seg_ros.h>
 
 int main(int argc, char* argv[]) {
   // Initialize the node
-  ros::init(argc, argv, "pytorch_enet_ros");
+  ros::init(argc, argv, "pytorch_seg_ros");
 
   ros::NodeHandle nh("~");
   //ros::NodeHandle nh;
 
   // Initialize the class
-  PyTorchENetROS enet_ros(nh);
+  PyTorchSegROS pytorch_seg_ros(nh);
 
-  ROS_INFO("[PyTorchENetROS] The node has been initialized");
+  ROS_INFO("[PyTorchSegROS] The node has been initialized");
 
   ros::spin();
   

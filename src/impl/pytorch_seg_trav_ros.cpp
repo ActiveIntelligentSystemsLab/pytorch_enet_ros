@@ -4,17 +4,17 @@
  *
  */
 
-#include <pytorch_ros/pytorch_enet_ros.h>
+#include <pytorch_ros/pytorch_seg_trav_ros.h>
 
-PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh) 
+PyTorchSegTravROS::PyTorchSegTravROS(ros::NodeHandle & nh) 
   : it_(nh), nh_(nh)
 {
-  sub_image_ = it_.subscribe("image", 1, &PyTorchENetROS::image_callback, this);
-  pub_label_image_ = it_.advertise("label", 1);
-  pub_color_image_ = it_.advertise("color_label", 1);
-  pub_prob_image_ = it_.advertise("prob", 1);
-  pub_uncertainty_image_ = it_.advertise("uncertainty", 1);
-  get_label_image_server_ = nh_.advertiseService("get_label_image", &PyTorchENetROS::image_inference_srv_callback, this);
+  sub_image_ = it_.subscribe("image", 1, &PyTorchSegTravROS::image_callback, this);
+  pub_label_image_ = it_.advertise("label", 10);
+  pub_color_image_ = it_.advertise("color_label", 10);
+  pub_prob_image_ = it_.advertise("prob", 10);
+  pub_uncertainty_image_ = it_.advertise("uncertainty", 10);
+  get_label_image_server_ = nh_.advertiseService("get_label_image", &PyTorchSegTravROS::image_inference_srv_callback, this);
 
   // Import the model
   std::string filename;
@@ -37,9 +37,9 @@ PyTorchENetROS::PyTorchENetROS(ros::NodeHandle & nh)
 }
 
 void
-PyTorchENetROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
+PyTorchSegTravROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
 {
-  ROS_INFO("[PyTorchENetROS image_callback] Let's start!!");
+  ROS_INFO("[PyTorchSegTravROS image_callback] Let's start!!");
 
   // Convert the image message to a cv_bridge object
   cv_bridge::CvImagePtr cv_ptr = msg_to_cv_bridge(msg);
@@ -67,10 +67,10 @@ PyTorchENetROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
  * image_inference_srv_callback : Callback for the service
  */
 bool
-PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabelAndProbability::Request  & req,
+PyTorchSegTravROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabelAndProbability::Request  & req,
                                              semantic_segmentation_srvs::GetLabelAndProbability::Response & res)
 {
-  ROS_INFO("[PyTorchENetROS image_inference_srv_callback] Start");
+  ROS_INFO("[PyTorchSegTravROS image_inference_srv_callback] Start");
 
   // Convert the image message to a cv_bridge object
   cv_bridge::CvImagePtr cv_ptr = msg_to_cv_bridge(req.img);
@@ -94,7 +94,7 @@ PyTorchENetROS::image_inference_srv_callback(semantic_segmentation_srvs::GetLabe
  * inference : Forward the given input image through the network and return the inference result
  */
 std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr>
-PyTorchENetROS::inference(cv::Mat & input_img)
+PyTorchSegTravROS::inference(cv::Mat & input_img)
 {
 
   // The size of the original image, to which the result of inference is resized back.
@@ -165,7 +165,7 @@ PyTorchENetROS::inference(cv::Mat & input_img)
  * label_to_color : Convert a label image to color label image for visualization
  */ 
 void
-PyTorchENetROS::label_to_color(cv::Mat& label, cv::Mat& color)
+PyTorchSegTravROS::label_to_color(cv::Mat& label, cv::Mat& color)
 {
   cv::cvtColor(label, color, CV_GRAY2BGR);
   cv::LUT(color, colormap_, color);
@@ -175,7 +175,7 @@ PyTorchENetROS::label_to_color(cv::Mat& label, cv::Mat& color)
  * msg_to_cv_bridge : Generate a cv_image pointer instance from a given image message pointer
  */
 cv_bridge::CvImagePtr
-PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
+PyTorchSegTravROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
 
@@ -197,7 +197,7 @@ PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
  * msg_to_cv_bridge : Generate a cv_image pointer instance from a given message
  */
 cv_bridge::CvImagePtr
-PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::Image msg)
+PyTorchSegTravROS::msg_to_cv_bridge(sensor_msgs::Image msg)
 {
   cv_bridge::CvImagePtr cv_ptr;
 
@@ -214,14 +214,3 @@ PyTorchENetROS::msg_to_cv_bridge(sensor_msgs::Image msg)
 
   return cv_ptr;
 }
-
-// cv::Mat PyTorchENetROS::getLookUpTable(const std::string dataset)
-// {
-//   cv::Mat lookUpTable(1, 256, CV_8UC3);
-// 
-//   if(dataset == "greenhouse") {
-// 
-//   } else if(dataset == "camvid") {
-// 
-//   }
-// }
