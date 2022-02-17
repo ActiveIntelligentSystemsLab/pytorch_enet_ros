@@ -36,11 +36,12 @@ private:
   image_transport::Publisher  pub_label_image_;
   image_transport::Publisher  pub_color_image_;
   image_transport::Publisher  pub_prob_image_;
+  image_transport::Publisher  pub_uncertainty_image_;
   ros::Publisher pub_start_point_;
   ros::Publisher pub_end_point_;
   ros::Time stamp_of_current_image_;
 
-  PyTorchCppWrapperSegTravPath pt_wrapper_;
+  std::shared_ptr<PyTorchCppWrapperSegTravPath> pt_wrapper_ptr_;
 
   // Used to convert a label image to a color image
   cv::Mat colormap_;
@@ -59,7 +60,8 @@ public:
    * @param[in] input_image OpenCV image 
    * @return    A tuple of messages of the inference results
    */
-  std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr> inference(cv::Mat & input_image);
+  std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
+    inference(cv::Mat & input_image);
 
   /** 
    * @brief Service callback
@@ -99,6 +101,13 @@ public:
    * @return                  A tuple of start and end points as geometry_msgs::PointStampedPtr
    */
   std::tuple<geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr> tensor_to_points(const at::Tensor point_tensor, const int & width, const int & height);
+
+  /** 
+   * @brief Normalize a tensor to feed in a model
+   * @param[in]  input        Tensor
+   */
+  void normalize_tensor(at::Tensor & input_tensor);
+
 };
 
 #endif

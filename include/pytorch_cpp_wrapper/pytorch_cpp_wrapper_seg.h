@@ -11,20 +11,21 @@
 #include <iostream>
 #include <memory>
 
-class PyTorchCppWrapperSegTrav : public PyTorchCppWrapperBase {
+class PyTorchCppWrapperSeg : public PyTorchCppWrapperBase {
 private :
   // c = P(s|y=1) in PU learning, calculated during training
   float c_{0.3};
+  bool use_aux_branch_{false};
 
 public:
-  PyTorchCppWrapperSegTrav(const std::string & filename, const int class_num);
-  PyTorchCppWrapperSegTrav(const char* filename, const int class_num);
+  PyTorchCppWrapperSeg(const std::string & filename, const int class_num);
+  PyTorchCppWrapperSeg(const char* filename, const int class_num);
 
   /**
    * @brief Get outputs from the model
    * @param[in] input_tensor Input tensor
-   * @return A tuple of output tensors (segmentation and traversability)
+   * @return A tuple of output tensors (segmentation)
    */
-  std::tuple<at::Tensor, at::Tensor> get_output(at::Tensor input_tensor);
+  at::Tensor get_output(at::Tensor input_tensor);
 };
 #endif

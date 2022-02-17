@@ -1,9 +1,27 @@
 <?xml version="1.0"?>
 <launch>
   <arg name="image" default="/camera/rgb/image_rect_color" />
-  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210518-221714.pt" />
+  <!--
+  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210712-134315.pt" />
+  <arg name="model_name" default="$(find pytorch_ros)/models/espnetv2_20211107-135851.pt" />
+  -->
+  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_20210115-151110.pt" />
 
+  <!--
+  <node pkg="pytorch_ros" type="pytorch_seg_node" name="pytorch_seg_node" output="screen">
+    <remap from="~image" to="$(arg image)" />
+    <param name="model_file" value="$(arg model_name)" />
+    <param name="colormap" value="$(find pytorch_ros)/images/greenhouse4.png" />
+    <param name="model_name" value="greenhouse" />
+  </node>
   <node pkg="pytorch_ros" type="pytorch_seg_trav_path_node" name="pytorch_seg_trav_path_node" output="screen">
+    <remap from="~image" to="$(arg image)" />
+    <param name="model_file" value="$(arg model_name)" />
+    <param name="colormap" value="$(find pytorch_ros)/images/greenhouse4.png" />
+    <param name="model_name" value="greenhouse" />
+  </node>
+  -->
+  <node pkg="pytorch_ros" type="pytorch_seg_trav_node" name="pytorch_seg_trav_node" output="screen">
     <remap from="~image" to="$(arg image)" />
     <param name="model_file" value="$(arg model_name)" />
     <param name="colormap" value="$(find pytorch_ros)/images/greenhouse4.png" />

@@ -44,10 +44,11 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-  src/pytorch_seg_trav_path_ros.cpp
-  src/pytorch_cpp_wrapper_seg_trav.cpp
-  src/pytorch_cpp_wrapper_seg_trav_path.cpp
-  src/pytorch_cpp_wrapper_base.cpp
+  src/impl/pytorch_seg_trav_path_ros.cpp
+  src/impl/pytorch_cpp_wrapper_seg.cpp
+  src/impl/pytorch_cpp_wrapper_seg_trav.cpp
+  src/impl/pytorch_cpp_wrapper_seg_trav_path.cpp
+  src/impl/pytorch_cpp_wrapper_base.cpp
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -61,8 +62,9 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(pytorch_seg_trav_path_node src/pytorch_seg_trav_path_node.cpp)
-add_executable(pytorch_seg_trav_node src/pytorch_enet_ros_node.cpp src/pytorch_enet_ros.cpp)
+add_executable(pytorch_seg_trav_path_node src/pytorch_seg_trav_path_node.cpp src/impl/pytorch_seg_trav_path_ros.cpp)
+add_executable(pytorch_seg_trav_node src/pytorch_seg_trav_node.cpp src/impl/pytorch_seg_trav_ros.cpp)
+add_executable(pytorch_seg_node src/pytorch_seg_node.cpp src/impl/pytorch_seg_ros.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pytorch_seg_trav_path_node
@@ -72,6 +74,12 @@ target_link_libraries(pytorch_seg_trav_path_node
 )
 
 target_link_libraries(pytorch_seg_trav_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}
+  ${TORCH_LIBRARIES}
+)
+
+target_link_libraries(pytorch_seg_node
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}
   ${TORCH_LIBRARIES}

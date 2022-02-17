@@ -15,11 +15,13 @@
 class PyTorchCppWrapperBase {
 protected :
   torch::jit::script::Module module_;
+  int class_num_;
+  float max_entropy_;
 
 public:
   PyTorchCppWrapperBase();
-  PyTorchCppWrapperBase(const std::string & filename);
-  PyTorchCppWrapperBase(const char* filename);
+  PyTorchCppWrapperBase(const std::string & filename, const int class_num);
+  PyTorchCppWrapperBase(const char* filename, const int class_num);
 
   /**
    * @brief import a network 
@@ -44,11 +46,26 @@ public:
   void tensor2img(at::Tensor tensor, cv::Mat & img);
 
   /**
+   * @brief convert a tensor (at::Tensor) to an image (cv::Mat)
+   * @param[in] tensor
+   * @return converted CV image
+   */
+  cv::Mat tensor2img(at::Tensor tensor);
+
+  /**
    * @brief Take element-wise argmax 
    * @param[in]  tensor
    * @param[out] tensor that has index of max value in each element
    */
   at::Tensor get_argmax(at::Tensor input_tensor);
+
+  /**
+   * @brief Take element-wise entropy 
+   * @param[in]  tensor
+   * @param[out] tensor that has index of max value in each element
+   */
+  at::Tensor get_entropy(at::Tensor input_tensor, const bool normalize);
+
 };
 //}
 #endif

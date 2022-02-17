@@ -13,6 +13,7 @@ PyTorchSegTravPathROS::PyTorchSegTravPathROS(ros::NodeHandle & nh)
   pub_label_image_ = it_.advertise("label", 1);
   pub_color_image_ = it_.advertise("color_label", 1);
   pub_prob_image_ = it_.advertise("prob", 1);
+  pub_uncertainty_image_ = it_.advertise("uncertainty", 1);
   pub_start_point_ = nh_.advertise<geometry_msgs::PointStamped>("start_point", 1);
   pub_end_point_ = nh_.advertise<geometry_msgs::PointStamped>("end_point", 1);
   get_label_image_server_ = nh_.advertiseService("get_label_image", &PyTorchSegTravPathROS::image_inference_srv_callback, this);
@@ -20,7 +21,8 @@ PyTorchSegTravPathROS::PyTorchSegTravPathROS(ros::NodeHandle & nh)
   // Import the model
   std::string filename;
   nh_.param<std::string>("model_file", filename, "");
-  if(!pt_wrapper_.import_module(filename)) {
+  pt_wrapper_ptr_.reset(new PyTorchCppWrapperSegTravPath(filename, 4));
+  if(!pt_wrapper_ptr_->import_module(filename)) {
     ROS_ERROR("Failed to import the model file [%s]", filename.c_str());
     ros::shutdown();
   }
@@ -53,19 +55,22 @@ PyTorchSegTravPathROS::image_callback(const sensor_msgs::ImageConstPtr& msg)
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
   sensor_msgs::ImagePtr prob_msg;
+  sensor_msgs::ImagePtr uncertainty_msg;
   geometry_msgs::PointStampedPtr start_point_msg;
   geometry_msgs::PointStampedPtr end_point_msg;
-  std::tie(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg) = inference(cv_ptr->image);
+  std::tie(label_msg, color_label_msg, prob_msg, uncertainty_msg, start_point_msg, end_point_msg) = inference(cv_ptr->image);
 
   // Set header
   label_msg->header = msg->header;
   color_label_msg->header = msg->header;
   prob_msg->header = msg->header;
+  uncertainty_msg->header = msg->header;
 
   // Publish the messages
   pub_label_image_.publish(label_msg);
   pub_color_image_.publish(color_label_msg);
   pub_prob_image_.publish(prob_msg);
+  pub_uncertainty_image_.publish(uncertainty_msg);
   pub_start_point_.publish(start_point_msg);
   pub_end_point_.publish(end_point_msg);
 }
@@ -88,9 +93,10 @@ PyTorchSegTravPathROS::image_inference_srv_callback(semantic_segmentation_srvs::
   sensor_msgs::ImagePtr label_msg;
   sensor_msgs::ImagePtr color_label_msg;
   sensor_msgs::ImagePtr prob_msg;
+  sensor_msgs::ImagePtr uncertainty_msg;
   geometry_msgs::PointStampedPtr start_point_msg;
   geometry_msgs::PointStampedPtr end_point_msg;
-  std::tie(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg) = inference(cv_ptr->image);
+  std::tie(label_msg, color_label_msg, prob_msg, uncertainty_msg, start_point_msg, end_point_msg) = inference(cv_ptr->image);
 
   res.label_img = *label_msg;
   res.colorlabel_img = *color_label_msg;
@@ -105,7 +111,8 @@ PyTorchSegTravPathROS::image_inference_srv_callback(semantic_segmentation_srvs::
  * @param[in] res  Response
  * @return    True if the service succeeded
  */
-std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
+std::tuple<sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, sensor_msgs::ImagePtr, 
+  geometry_msgs::PointStampedPtr, geometry_msgs::PointStampedPtr>
 PyTorchSegTravPathROS::inference(cv::Mat & input_img)
 {
 
@@ -118,36 +125,47 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   cv::resize(input_img, input_img, s);
 
   at::Tensor input_tensor;
-  pt_wrapper_.img2tensor(input_img, input_tensor);
+  pt_wrapper_ptr_->img2tensor(input_img, input_tensor);
 
-  // Normalize from [0, 255] -> [0, 1]
-  input_tensor /= 255.0;
-  // z-normalization
-  std::vector<float> mean_vec{0.485, 0.456, 0.406};
-  std::vector<float> std_vec{0.229, 0.224, 0.225};
-  for(int i = 0; i < mean_vec.size(); i++) {
-    input_tensor[0][i] = (input_tensor[0][i] - mean_vec[i]) / std_vec[i];
-  }
+  normalize_tensor(input_tensor);
 
   // Execute the model and turn its output into a tensor.
   at::Tensor segmentation;
   at::Tensor prob;
   at::Tensor points;
-  std::tie(segmentation, prob, points) = pt_wrapper_.get_output(input_tensor);
+  // segmentation: raw output for segmentation (before softmax)
+  // prob: traversability
+  // points: coordinates of the line points
+  std::tie(segmentation, prob, points) = pt_wrapper_ptr_->get_output(input_tensor);
+  prob = (prob[0][0]*255).to(torch::kCPU).to(torch::kByte);
 
-  at::Tensor output_args = pt_wrapper_.get_argmax(segmentation);
+  // Get class label map by taking argmax of 'segmentation'
+  at::Tensor output_args = pt_wrapper_ptr_->get_argmax(segmentation);
+
+  // Uncertainty of segmentation
+  at::Tensor uncertainty = pt_wrapper_ptr_->get_entropy(segmentation, true);
+  uncertainty = (uncertainty[0]*255).to(torch::kCPU).to(torch::kByte);
+
+  // Set the size
+  cv::Size s_orig(width_orig, height_orig);
 
   // Convert to OpenCV
   cv::Mat label;
   cv::Mat prob_cv;
-  pt_wrapper_.tensor2img(output_args[0], label);
-  pt_wrapper_.tensor2img((prob[0][0]*255).to(torch::kByte), prob_cv);
+  cv::Mat uncertainty_cv = cv::Mat::zeros(s_orig.height, s_orig.width, CV_8U);
+  // Segmentation label
+  label = pt_wrapper_ptr_->tensor2img(output_args[0]);
+  // Segmentation label
+  uncertainty_cv = pt_wrapper_ptr_->tensor2img(uncertainty);
+//  uncertainty_cv = pt_wrapper_ptr_->tensor2img((uncertainty*255).to(torch::kCPU).to(torch::kByte));
+  // Traverability
+  prob_cv = pt_wrapper_ptr_->tensor2img(prob);
 
-  // Set the size
-  cv::Size s_orig(width_orig, height_orig);
   // Resize the input image back to the original size
   cv::resize(label, label, s_orig, cv::INTER_NEAREST);
   cv::resize(prob_cv, prob_cv, s_orig, cv::INTER_LINEAR);
+  cv::resize(uncertainty_cv, uncertainty_cv, s_orig, cv::INTER_LINEAR);
+
   // Generate color label image
   cv::Mat color_label;
   label_to_color(label, color_label);
@@ -155,11 +173,13 @@ PyTorchSegTravPathROS::inference(cv::Mat & input_img)
   // Generate an image message and point messages
   sensor_msgs::ImagePtr label_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", label).toImageMsg();
   sensor_msgs::ImagePtr color_label_msg = cv_bridge::CvImage(std_msgs::Header(), "rgb8", color_label).toImageMsg();
+  // Problem: Wrong data is sometimes assigned to 'prob_cv' 
   sensor_msgs::ImagePtr prob_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", prob_cv).toImageMsg();
+  sensor_msgs::ImagePtr uncertainty_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", uncertainty_cv).toImageMsg();
   geometry_msgs::PointStampedPtr start_point_msg(new geometry_msgs::PointStamped), end_point_msg(new geometry_msgs::PointStamped);
   std::tie(start_point_msg, end_point_msg) = tensor_to_points(points, width_orig, height_orig);
   
-  return std::forward_as_tuple(label_msg, color_label_msg, prob_msg, start_point_msg, end_point_msg);
+  return std::forward_as_tuple(label_msg, color_label_msg, prob_msg, uncertainty_msg, start_point_msg, end_point_msg);
 }
 
 /** 
@@ -218,7 +238,7 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::ImageConstPtr msg)
   // Convert the image message to a cv_bridge object
   try
   {
-    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    cv_ptr = cv_bridge::toCvCopy(msg, msg->encoding);
   }
   catch (cv_bridge::Exception& e)
   {
@@ -242,7 +262,7 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::Image msg)
   // Convert the image message to a cv_bridge object
   try
   {
-    cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    cv_ptr = cv_bridge::toCvCopy(msg, msg.encoding);
   }
   catch (cv_bridge::Exception& e)
   {
@@ -251,4 +271,21 @@ PyTorchSegTravPathROS::msg_to_cv_bridge(sensor_msgs::Image msg)
   }
 
   return cv_ptr;
+}
+
+/** 
+ * @brief Normalize a tensor to feed in a model
+ * @param[in]  input        Tensor
+ */
+void 
+PyTorchSegTravPathROS::normalize_tensor(at::Tensor & input_tensor)
+{
+  // Normalize from [0, 255] -> [0, 1]
+  input_tensor /= 255.0;
+  // z-normalization
+  std::vector<float> mean_vec{0.485, 0.456, 0.406};
+  std::vector<float> std_vec{0.229, 0.224, 0.225};
+  for(int i = 0; i < mean_vec.size(); i++) {
+    input_tensor[0][i] = (input_tensor[0][i] - mean_vec[i]) / std_vec[i];
+  }
 }
