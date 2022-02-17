@@ -61,9 +61,16 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(pytorch_seg_trav_path_node src/pytorch_seg_trav_path_node.cpp)
+add_executable(pytorch_seg_trav_node src/pytorch_enet_ros_node.cpp src/pytorch_enet_ros.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pytorch_seg_trav_path_node
+  ${catkin_LIBRARIES}
+  ${PROJECT_NAME}
+  ${TORCH_LIBRARIES}
+)
+
+target_link_libraries(pytorch_seg_trav_node
   ${catkin_LIBRARIES}
   ${PROJECT_NAME}
   ${TORCH_LIBRARIES}
