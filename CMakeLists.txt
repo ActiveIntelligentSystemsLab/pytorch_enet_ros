@@ -5,6 +5,8 @@ add_compile_options(-std=c++14)
 
 # Locate the cmake file of torchlib
 set(Torch_DIR "/opt/pytorch/pytorch/torch/share/cmake/Torch/")
+set(CUDNN_INCLUDE_DIR "/usr/include/")
+set(CUDNN_LIBRARY "/usr/lib/x86_64-linux-gnu/")
 #set(Torch_DIR "$ENV{TORCH_ROOT}/torch/share/cmake/Torch/")
 
 ## Find catkin macros and libraries
