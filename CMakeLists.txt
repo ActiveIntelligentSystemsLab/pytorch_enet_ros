@@ -4,10 +4,11 @@ project(pytorch_ros)
 add_compile_options(-std=c++14)
 
 # Locate the cmake file of torchlib
-set(Torch_DIR "/opt/pytorch/pytorch/torch/share/cmake/Torch/")
+# set(Torch_DIR "/opt/pytorch/pytorch/torch/share/cmake/Torch/")
+# set(Torch_DIR "/usr/local/lib/python3.8/dist-packages/torch/share/cmake/Torch/")
 set(CUDNN_INCLUDE_DIR "/usr/include/")
 set(CUDNN_LIBRARY "/usr/lib/x86_64-linux-gnu/")
-#set(Torch_DIR "$ENV{TORCH_ROOT}/torch/share/cmake/Torch/")
+set(Torch_DIR "$ENV{Torch_INST_ROOT}/torch/share/cmake/Torch/")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -21,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
   semantic_segmentation_srvs
   tf2
   tf2_ros
+  tf2_geometry_msgs
+
 )
 
 find_package(Torch REQUIRED)
@@ -71,18 +74,21 @@ add_executable(pytorch_seg_node src/pytorch_seg_node.cpp src/impl/pytorch_seg_ro
 ## Specify libraries to link a library or executable target against
 target_link_libraries(pytorch_seg_trav_path_node
   ${catkin_LIBRARIES}
-  ${PROJECT_NAME}
   ${TORCH_LIBRARIES}
+  ${Open_CV_LIBS}
+  ${PROJECT_NAME}
 )
 
 target_link_libraries(pytorch_seg_trav_node
   ${catkin_LIBRARIES}
-  ${PROJECT_NAME}
   ${TORCH_LIBRARIES}
+  ${Open_CV_LIBS}
+  ${PROJECT_NAME}
 )
 
 target_link_libraries(pytorch_seg_node
   ${catkin_LIBRARIES}
-  ${PROJECT_NAME}
+  ${Open_CV_LIBS}
   ${TORCH_LIBRARIES}
+  ${PROJECT_NAME}
 )
