@@ -2,3 +2,6 @@
 	path = script/espdnet
 	url = https://aisl-serv6.aisl.cs.tut.ac.jp:20443/ShigemichiMatsuzaki/espdnet
 	branch = ros-library
+[submodule "espdnet"]
+	path = espdnet
+	url = https://aisl-serv6.aisl.cs.tut.ac.jp:20443/ShigemichiMatsuzaki/espdnet
