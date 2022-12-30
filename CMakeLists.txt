@@ -4,8 +4,8 @@ project(pytorch_ros)
 add_compile_options(-std=c++14)
 
 # Locate the cmake file of torchlib
-set(Torch_DIR "/opt/pytorch/pytorch/torch/share/cmake/Torch/")
-#set(Torch_DIR "$ENV{TORCH_ROOT}/torch/share/cmake/Torch/")
+# set(Torch_DIR "/usr/local/lib/python3.8/dist-packages/torch/share/cmake/Torch/")
+set(Torch_DIR "$ENV{TORCH_PATH}/torch/share/cmake/Torch/")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
