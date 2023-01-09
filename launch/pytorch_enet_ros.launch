@@ -2,10 +2,10 @@
 <launch>
   <arg name="image" default="/camera/rgb/image_rect_color" />
   <!--
-  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210712-134315.pt" />
   <arg name="model_name" default="$(find pytorch_ros)/models/espnetv2_20211107-135851.pt" />
-  -->
   <arg name="model_name" default="$(find pytorch_ros)/models/espnet_ue_cosine_best_6.pth" />
+  -->
+  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210712-134315.pt" />
 
   <!--
   <node pkg="pytorch_ros" type="pytorch_seg_node" name="pytorch_seg_node" output="screen">
@@ -28,9 +28,11 @@
     <param name="model_name" value="greenhouse" />
   </node>
 
+  <!--
   <node pkg="pytorch_ros" type="visualizer.py" name="visualizer" output="screen">
     <remap from="image" to="$(arg image)" />
     <remap from="start_point" to="/pytorch_seg_trav_path_node/start_point" />
     <remap from="end_point" to="/pytorch_seg_trav_path_node/end_point" />
   </node>
+  -->
 </launch>

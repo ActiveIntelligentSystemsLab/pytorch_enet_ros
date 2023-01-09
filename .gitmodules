@@ -5,3 +5,6 @@
 [submodule "espdnet"]
 	path = espdnet
 	url = https://aisl-serv6.aisl.cs.tut.ac.jp:20443/ShigemichiMatsuzaki/espdnet
+[submodule "script/rospy_pytorch_util"]
+	path = script/rospy_pytorch_util
+	url = git@github.com:ActiveIntelligentSystemsLab/rospy_pytorch_util.git
