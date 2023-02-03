@@ -5,7 +5,7 @@
   <arg name="model_name" default="$(find pytorch_ros)/models/espnetv2_20211107-135851.pt" />
   <arg name="model_name" default="$(find pytorch_ros)/models/espnet_ue_cosine_best_6.pth" />
   -->
-  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_path_20210712-134315.pt" />
+  <arg name="model_name" default="$(find pytorch_ros)/models/espdnet_ue_trav_20210115-151110.pt" />
 
   <!--
   <node pkg="pytorch_ros" type="pytorch_seg_node" name="pytorch_seg_node" output="screen">
