@@ -1,13 +1,19 @@
 #!/usr/bin/python3
-from model.segmentation.espnet_ue_cosine import espnetue_seg
-import torch.nn.functional as F
-import torch
-import sensor_msgs
-import PIL
-from cv_bridge import CvBridge
-import cv2
+import time
 from distutils.util import strtobool
 import argparse
+from tqdm import tqdm
+
+import torch.nn.functional as F
+import torch
+from model.segmentation.espnet_ue_cosine import espnetue_seg
+from utilities.pseudo_label_generator import get_output
+import PIL
+
+import sensor_msgs
+import std_srvs
+from cv_bridge import CvBridge
+import cv2
 import rospy
 from rospy_pytorch_util.inference_node_base import InferenceNodeBase
 from rospy_pytorch_util.utils import imgmsg_to_pil, pil_to_imgmsg
@@ -121,6 +127,13 @@ class pytorch_enet_ros(InferenceNodeBase):
             queue_size=10,
         )
 
+        # Service for imprinting
+        self.train_data_path = rospy.param("~train_data_path", "/tmp/")
+        self.imprinting_srv = rospy.Service(
+            '~imprint',
+            std_srvs.srv.Trigger,
+            self.imprinting_srv_callback)
+
         self.bridge = CvBridge()
 
         self.colors = [0, 255, 0, 0, 255, 255, 255, 0, 0, 255, 255, 0, 0, 0, 0]
@@ -136,23 +149,10 @@ class pytorch_enet_ros(InferenceNodeBase):
             Image message
 
         """
-        # Image message to OpenCV image
-        # cv_img = self.bridge.imgmsg_to_cv2(
-        #     img_msg, desired_encoding='passthrough')
-        # cv_img = cv2.resize(cv_img, (256, 480))
-        # cv_img = cv_img.transpose(2, 1, 0)
-        # cv_img = cv_img[:3, :, :]
-
-        # # OpenCV to torch.Tensor
-        # tensor_img = torch.from_numpy(
-        #     cv_img.astype(np.float32)).to(self.device)
-        # tensor_img = torch.unsqueeze(tensor_img, dim=0)
-
         pil_image, _, _ = imgmsg_to_pil(img_msg)
         tensor_img = self.transforms(pil_image).unsqueeze(0).to(self.device)
 
         # Get output
-
         with torch.no_grad():
             output = self.model(tensor_img)
 
@@ -173,6 +173,50 @@ class pytorch_enet_ros(InferenceNodeBase):
             trav_msg = self.bridge.cv2_to_imgmsg(
                 output[2].squeeze().cpu().numpy(), "32FC1")
             self.trav_pub.publish(trav_msg)
+
+    def imprinting_srv_callback(self, req: std_srvs.srv.Trigger):
+        """Callback function for 
+
+        Parameters
+        ----------
+        req : `std_srvs.srv.Trigger`
+            Request
+        """
+        self.model.eval()
+        try:
+            with torch.no_grad():
+                #
+                # Train
+                #
+                image_list = []
+                masks_list = []
+                for i, batch in tqdm(enumerate(train_loader)):
+
+                    image = batch["rgb"].to(self.device)
+                    mask = batch["trav_mask"].to(self.device)
+
+                    # Output: tensor, KLD: tensor, feature: tensor
+                    output_prob, _, _ = get_output(
+                        self.model, image, is_numpy=False)
+                    argmax_output = torch.argmax(output_prob, dim=1)
+
+                    # Extract MISCLASSIFIED (argmax != 0) plant regions
+                    mask[argmax_output == 0] = 0
+
+                    image_list.append(image)
+                    masks_list.append(mask)
+        except:
+            return std_srvs.srv.TriggerResponse(True, "failed feature accumlation")
+
+        #
+        # Imprinting
+        #
+        try:
+            self.model.imprint(image_list, masks_list, alpha=0.26)
+        except:
+            return std_srvs.srv.TriggerResponse(True, "failed imprinting")
+
+        return std_srvs.srv.TriggerResponse(True, "succeeded")
 
 
 def main():
