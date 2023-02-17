@@ -100,3 +100,9 @@ For visualization of semantic segmentation, we use a color map image.
 
 It is a 1xC PNG image file (C: The number of classes), where 
 the color of class i is stored in the pixel at (1, i).
+
+## 7. Publications
+
+This repository is used in experiments in the publication as follows:
+
+Shigemichi Matsuzaki, Hiroaki Masuzawa, Jun Miura, Image-Based Scene Recognition for Robot Navigation Considering Traversable Plants and Its Manual Annotation-Free Training, IEEE Access, vol. 10, pp. 5115-5128, 2022 [[paper](https://ieeexplore.ieee.org/document/9674898)]
